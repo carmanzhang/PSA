@@ -195,3 +195,111 @@ from (
 select count()
 from sp.pubmed_paper_mesh_reference_bioentity;
 
+-- Common neurosurgical diseases, may be used in user study.
+-- drop table sp.pubmed_randomly_selected_papers;
+create table if not exists sp.pubmed_randomly_selected_papers ENGINE = MergeTree order by pm_id as
+select *
+from sp.pubmed_paper_mesh_reference_bioentity any
+         inner join (
+    select pm_id,
+           has(groupArray(source) as sources, 'dataset') and length(sources) > 1 ? 'dataset': sources[1] as function
+    from (
+          select pm_id, 'dataset' as source
+          from sp.pubmed_paper_mesh_reference_bioentity
+          where rand(xxHash32(now64(), pm_id)) % 100 < 30
+            and length(mesh_ids) > 0
+            and length(references) > 0
+          order by rand(xxHash32(pm_id))
+          limit 1000000
+          union all
+          select toString(pm_id) as pm_id, 'user-study-glioma' as source
+          from pubmed.nft_paper
+          where positionCaseInsensitive(article_title, 'brain glioma') > 0
+          union all
+          select toString(pm_id) as pm_id, 'user-study-epilepsy' as source
+          from pubmed.nft_paper
+          where positionCaseInsensitive(article_title, 'epilepsy') > 0)
+    group by pm_id) using pm_id
+where length(mesh_ids) > 0
+  and length(references) > 0
+;
+
+-- dataset,1000000
+-- user-study-epilepsy,4442
+-- user-study-glioma,53
+select function, count()
+from sp.pubmed_randomly_selected_papers
+group by function;
+
+
+-- TODO select top related paper for the each paper in the sample dataset
+select pm_id,
+       arrayStringConcat(mesh_ids, ' ')                                                   as original_mesh,
+       arrayStringConcat(references, ' ')                                                 as original_reference,
+       arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ') as enhanced_mesh,
+       arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),
+                         ' ')                                                             as enhanced_reference,
+       arrayStringConcat(arrayDistinct(arrayConcat(m, n)), ' ')                           as enhanced_mesh_reference
+from sp.pubmed_paper_mesh_reference_bioentity
+where length(mesh_ids) > 0
+   or length(references) > 0
+   or length(european_pm_references) > 0
+   or length(bern_entity_ids) > 0
+   or length(matched_mesh_ids) > 0
+;
+
+select pm_id,
+       arrayStringConcat(mesh_ids, ' ')                                                   as original_mesh,
+       arrayStringConcat(references, ' ')                                                 as original_reference,
+       arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ') as enhanced_mesh,
+       arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),
+                         ' ')                                                             as enhanced_reference,
+       arrayStringConcat(arrayDistinct(arrayConcat(m, n)), ' ')                           as enhanced_mesh_reference
+from sp.pubmed_randomly_selected_papers;
+
+-- TODO
+select cited_pm_id, citing_pm_id, 1 as weight
+from pubmed.europen_pubmed_citation_network
+where length(citing_pm_id) > 0
+  and match(citing_pm_id, '^[0-9]+$')
+  and length(cited_pm_id) > 0
+  and match(cited_pm_id, '^[0-9]+$');
+
+-- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/data/pubmed_paper_found_sample_similar_article.tsv | clickhouse-local --input_format_allow_errors_ratio=0.1 --input-format=TSV --table='input' --structure="pm_id String, s1 String, s2 String, s3 String, s4 String, s5 String"  --query="select pm_id, \
+--        arrayMap(f1-> (JSONExtractString(f1, 'pm_id'), toFloat32(JSONExtractFloat(f1, 'score')), toUInt32(JSONExtractInt(f1, 'intersect'))), JSONExtractArrayRaw(s1)) as original_mesh_field_search_result, \
+--        arrayMap(f2-> (JSONExtractString(f2, 'pm_id'), toFloat32(JSONExtractFloat(f2, 'score')), toUInt32(JSONExtractInt(f2, 'intersect'))), JSONExtractArrayRaw(s2)) as original_reference_field_search_result, \
+--        arrayMap(f3-> (JSONExtractString(f3, 'pm_id'), toFloat32(JSONExtractFloat(f3, 'score')), toUInt32(JSONExtractInt(f3, 'intersect'))), JSONExtractArrayRaw(s3)) as enhanced_mesh_field_search_result, \
+--        arrayMap(f4-> (JSONExtractString(f4, 'pm_id'), toFloat32(JSONExtractFloat(f4, 'score')), toUInt32(JSONExtractInt(f4, 'intersect'))), JSONExtractArrayRaw(s4)) as enhanced_reference_field_search_result, \
+--        arrayMap(f5-> (JSONExtractString(f5, 'pm_id'), toFloat32(JSONExtractFloat(f5, 'score')), toUInt32(JSONExtractInt(f5, 'intersect'))), JSONExtractArrayRaw(s5)) as enhanced_mesh_reference_field_search_result \
+-- from input" --format=Native | clickhouse-client --query='INSERT INTO sp.pubmed_randomly_selected_papers_found_similar_paper FORMAT Native' --port=9001 --password=root
+
+-- drop table sp.pubmed_randomly_selected_papers_found_similar_paper;
+create table if not exists sp.pubmed_randomly_selected_papers_found_similar_paper
+(
+    pm_id                                       String,
+    original_mesh_field_search_result           Array(Tuple(String, Float32, UInt32)),
+    original_reference_field_search_result      Array(Tuple(String, Float32, UInt32)),
+    enhanced_mesh_field_search_result           Array(Tuple(String, Float32, UInt32)),
+    enhanced_reference_field_search_result      Array(Tuple(String, Float32, UInt32)),
+    enhanced_mesh_reference_field_search_result Array(Tuple(String, Float32, UInt32))
+) ENGINE = MergeTree order by length(pm_id);
+
+select count()
+from sp.pubmed_randomly_selected_papers_found_similar_paper;
+
+
+-- visual the titles of similar papers and examine the results
+select pm_id, article_title, od
+from pubmed.nft_paper any
+         inner join (
+    select (arrayJoin(paper_its_similar_papres) as item)[1] as pm_id,
+           item[2]                                          as od
+    from (select arrayMap(i->
+                              [toUInt64(pm_id_arr[i]), i], arrayEnumerate(arrayPushFront(
+            arrayMap(x-> tupleElement(x, 1), enhanced_mesh_reference_field_search_result),
+            pm_id) as pm_id_arr)) as paper_its_similar_papres
+          from sp.pubmed_randomly_selected_papers_found_similar_paper
+          order by rand()
+          limit 1)) using pm_id
+order by od
+;

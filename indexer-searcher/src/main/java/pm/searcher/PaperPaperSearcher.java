@@ -1,9 +1,7 @@
 package pm.searcher;
 
-import com.google.common.collect.Lists;
-import jdk.nashorn.internal.objects.NativeUint8Array;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -11,15 +9,12 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MultiCollectorManager;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.NIOFSDirectory;
 import pm.entity.SearchResult;
 import pm.utils.DBUtil;
 import pm.utils.JsonUtil;
-import pm.utils.SentenceUtil;
 
 import java.io.*;
 import java.nio.file.Paths;

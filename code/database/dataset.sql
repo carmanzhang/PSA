@@ -229,7 +229,8 @@ where length(mesh_ids) > 0
 -- user-study-glioma,53
 select function, count()
 from sp.pubmed_randomly_selected_papers
-group by function;
+group by function
+order by function desc;
 
 
 -- TODO select top related paper for the each paper in the sample dataset
@@ -265,7 +266,7 @@ where length(citing_pm_id) > 0
   and length(cited_pm_id) > 0
   and match(cited_pm_id, '^[0-9]+$');
 
--- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/data/pubmed_paper_found_sample_similar_article.tsv | clickhouse-local --input_format_allow_errors_ratio=0.1 --input-format=TSV --table='input' --structure="pm_id String, s1 String, s2 String, s3 String, s4 String, s5 String"  --query="select pm_id, \
+-- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/pubmed_paper_found_sample_similar_article.tsv | clickhouse-local --input_format_allow_errors_ratio=0.1 --input-format=TSV --table='input' --structure="pm_id String, s1 String, s2 String, s3 String, s4 String, s5 String"  --query="select pm_id, \
 --        arrayMap(f1-> (JSONExtractString(f1, 'pm_id'), toFloat32(JSONExtractFloat(f1, 'score')), toUInt32(JSONExtractInt(f1, 'intersect'))), JSONExtractArrayRaw(s1)) as original_mesh_field_search_result, \
 --        arrayMap(f2-> (JSONExtractString(f2, 'pm_id'), toFloat32(JSONExtractFloat(f2, 'score')), toUInt32(JSONExtractInt(f2, 'intersect'))), JSONExtractArrayRaw(s2)) as original_reference_field_search_result, \
 --        arrayMap(f3-> (JSONExtractString(f3, 'pm_id'), toFloat32(JSONExtractFloat(f3, 'score')), toUInt32(JSONExtractInt(f3, 'intersect'))), JSONExtractArrayRaw(s3)) as enhanced_mesh_field_search_result, \
@@ -284,13 +285,97 @@ create table if not exists sp.pubmed_randomly_selected_papers_found_similar_pape
     enhanced_mesh_reference_field_search_result Array(Tuple(String, Float32, UInt32))
 ) ENGINE = MergeTree order by length(pm_id);
 
+-- 998659 pubmed_paper_found_sample_similar_article.tsv
+-- 998659
 select count()
 from sp.pubmed_randomly_selected_papers_found_similar_paper;
 
+select count()
+-- from fp.paper_clean_content;
+from fp.paper_clean_content;
+
+
+-- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/pubmed_official_similar_paper_bulk.tsv | clickhouse-local --input_format_allow_errors_ratio=0.1 --input-format=TSV --table='input' --structure="line String"  --query="select JSONExtractString(line, 'pm_id')            as pm_id, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed', \
+--                                                 JSONExtractArrayRaw(JSONExtractRaw(line, 'record') as record, \
+--                                                                     'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed_citedin', \
+--                                                 JSONExtractArrayRaw(record, 'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed_citedin, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed_combined', \
+--                                                 JSONExtractArrayRaw(record, 'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed_combined, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed_five', \
+--                                                 JSONExtractArrayRaw(record, 'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed_five, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed_refs', \
+--                                                 JSONExtractArrayRaw(record, 'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed_refs, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed_reviews', \
+--                                                 JSONExtractArrayRaw(record, 'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed_reviews, \
+--        arrayMap(y1-> \
+--                     [JSONExtractString(y1, 'Id'), JSONExtractString(y1, 'Score')], \
+--                 JSONExtractArrayRaw(arrayFilter(x1->JSONExtractString(x1, 'LinkName') == 'pubmed_pubmed_reviews_five', \
+--                                                 JSONExtractArrayRaw(record, 'LinkSetDb'))[1], 'Link') \
+--            )                                           as pubmed_pubmed_reviews_five, \
+--        JSONExtractArrayRaw(record, 'ERROR')            as error, \
+--        JSONExtractArrayRaw(record, 'LinkSetDbHistory') as linkset_db_history, \
+--        JSONExtractRaw(record, 'DbFrom')                as db_from, \
+--        JSONExtractArrayRaw(record, 'IdList')           as id_list \
+-- from input" --format=Native | clickhouse-client --query='INSERT INTO sp.pubmed_official_similar_paper FORMAT Native' --port=9001 --password=root
+
+-- TODO dataset was crawled at 2010-05-15 to 2010-05-17
+-- drop table sp.pubmed_official_similar_paper;
+create table if not exists sp.pubmed_official_similar_paper
+(
+    pm_id                      String,
+    pubmed_pubmed              Array(Array(String)),
+    pubmed_pubmed_citedin      Array(Array(String)),
+    pubmed_pubmed_combined     Array(Array(String)),
+    pubmed_pubmed_five         Array(Array(String)),
+    pubmed_pubmed_refs         Array(Array(String)),
+    pubmed_pubmed_reviews      Array(Array(String)),
+    pubmed_pubmed_reviews_five Array(Array(String)),
+    error                      Array(String),
+    linkset_db_history         Array(String),
+    db_from                    String,
+    id_list                    Array(String)
+) ENGINE = MergeTree order by length(pm_id);
+
+-- 1002495 pubmed_official_similar_paper_bulk.tsv
+-- 1002495
+-- 0
+select count()
+from sp.pubmed_official_similar_paper
+where length(error) > 0
+   or length(linkset_db_history) > 0
+   or db_from != '"pubmed"'
+   or length(id_list) != 1
+   or id_list[1] != concat('\"', pm_id, '\"');
+
 
 -- visual the titles of similar papers and examine the results
-select pm_id, article_title, od
-from pubmed.nft_paper any
+select pm_id,
+       clean_title as title,
+       od
+-- from pubmed.nft_paper
+from (select pm_id, clean_title, clean_abstract, clean_mesh_headings, clean_keywords, datetime_str
+      from fp.paper_clean_content)
+         any
          inner join (
     select (arrayJoin(paper_its_similar_papres) as item)[1] as pm_id,
            item[2]                                          as od

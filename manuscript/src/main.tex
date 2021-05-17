@@ -3,34 +3,67 @@
 
 % Preamble
 \documentclass[11pt]{article}
-
+\usepackage{cite}
 % Packages
 \usepackage{amsmath}
 
+\title{Evaluating pre-trained transformer models for similar article recommendation in PubMed}
+\author{Li Zhang}
+\date{\today}
+
+
 % Document
 \begin{document}
-    \title{Evaluating pre-trained transformer models for similar article recommendation in PubMed}
     \maketitle
 
+    \begin{abstract}
+        The work presented here promises to make the exploration of scholarly material faster and more accurate.
+    \end{abstract}
+
+    \newpage
+
+
     \section{Introduction}
+    Simialr article recomendation is an important feature in many academic seaching database/digital libraries. It enable users to go though relative researher quackly, play an impor6tant role in improving user searching experimence, while more importantly, is can help to accurate dismi the valuable biomedical findings.
+    Improved literature search engines can save researchers time and effort by making it easier to locate the most important and relevant literature. \cite{2006Text}
+
+    How long has PubMed supplied "Simialr article" function?
+    Like other system, ResearchGate, Scopus, NCBI's PubMed system, has integrated this feature since *, However, the their method to find the similar article is still very *. To date, with the fast developemnt of
+    nature language proccessing, the cutting-edge techniques have prove an opputunity to improve simialr article recommendation performance.
+
+
+    In this paper, we show the simialr article performance are be largely promoted by using large-heavy pertrained language model.
+
+    PubMed related article links identify closely related articles and enhance our ability to navigate the biomedical literature \cite{Enriching2009}.
+
+    PubMed has integrated the "Simialr article" function for a long time,
 
     show the case here.
 
     significence:
-        Fig * shows the similar article recommendation functionality, this function is very helpful for biomedical scholar, as a recent works by NLM/NCBI team suggest user needs can be largely improved while users explore related articles.
-        can power PubMed user experience,...
+    Fig * shows the similar article recommendation functionality, this function is very helpful for biomedical scholar, as a recent works by NLM/NCBI team suggest user needs can be largely improved while users explore related articles.
+    can power PubMed user experience,...
 
-        Why similar article recommendation is very important for further improveing search exerperience, why it is a necessary functionality?
-        Related works: how PubMed improving use searching experience. To improving user searching experience, NCBI has provided many in place measurements from serverl aspects.
-        such as autocomplition, ..., \cite[]{}. refrequent search terms recommendation. However, this measures can be not necessary enough, user may expore other
+    Why similar article recommendation is very important for further improveing search exerperience, why it is a necessary functionality?
+    Related works: how PubMed improving use searching experience. To improving user searching experience, NCBI has provided many in place measurements from serverl aspects.
+    such as autocomplition, ..., . refrequent search terms recommendation. However, this measures can be not necessary enough, user may expore other
     What did europen Pubmed did? and what did other platform did?
 
     In many academic service platform, such as web of science,..., they
 
     How did others find similar article?
 
+    Our contribution are three parts.
+    we provide an method to automaticilly build similar article dataset for development models
+    we evaluated the most well-known pre-trained models on four dataset, and emperical evaluation shows fine-tuned * model shows state-of-the-art result.
+    Using this method, we obtain the paper distribution vector for whole PubMed papers.
+
 
     \section{Related works}
+%    refer to this to understand how NCBI find similar papers: https://pubmed.ncbi.nlm.nih.gov/help/#computation-of-similar-articles
+%    https://pubmed.ncbi.nlm.nih.gov/help/#similar-articles
+%    Since * year users can obtain all similar articles according to https://www.nlm.nih.gov/pubs/techbull/jf20/jf20_pubmed_new_updated.html
+%    https://www.nlm.nih.gov/pubs/techbull/jf20/jf20_pubmed_new_updated.html
 
     show detailed is there any evaluation dataset?
 
@@ -50,12 +83,15 @@
 
 
     \section{Discussion}
+
     \subsection{how this works can be intregtared into PubMed system?}
     fast, very short words embeddings, inductive-infering.
 
     \subsection{user study}
     how it can be
+
     \subsection{limitation}
+
     \subsection{future protential imporovement}
 
     This study only recomnedation paper from semantic perspective, however, in many commercial recommender system, the recommeded items may not ony semantic relatedness, other relationship
@@ -66,6 +102,7 @@
 
     exploring more user intellience that can be available in NCBI
 
+
     \section{Conclusions}
     In this works, we shows an effective and effecient way to locate similar PubMed for power user search experpence in PubMed system.
     This study provide initial, portary investigation on simiar article for PubMed system.
@@ -73,6 +110,6 @@
 
     Our future works intent more relationship in paper recomendation.
 
-    \bibliography{main}
     \bibliographystyle{plain}
+    \bibliography{main}
 \end{document}

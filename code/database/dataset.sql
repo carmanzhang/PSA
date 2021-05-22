@@ -388,3 +388,21 @@ from (select pm_id, clean_title, clean_abstract, clean_mesh_headings, clean_keyw
           limit 1)) using pm_id
 order by od
 ;
+
+-- create evaluation dataset. the ranking results are computed by an information retrieval tool
+select count()
+from sp.pubmed_randomly_selected_papers_found_similar_paper
+where length(original_mesh_field_search_result) == 0
+   or length(original_reference_field_search_result) == 0
+   or length(enhanced_mesh_field_search_result) == 0
+   or length(enhanced_reference_field_search_result) == 0
+   or length(enhanced_mesh_reference_field_search_result) == 0
+;
+
+select pm_id,
+       original_mesh_field_search_result,
+       original_reference_field_search_result,
+       enhanced_mesh_field_search_result,
+       enhanced_reference_field_search_result,
+       enhanced_mesh_reference_field_search_result
+from sp.pubmed_randomly_selected_papers_found_similar_paper;

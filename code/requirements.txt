@@ -1,0 +1,2 @@
+sentence-transformers==1.0.4
+MatchZoo==2.2.0

@@ -11,7 +11,8 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.store.NIOFSDirectory;
+import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.store.*;
 import pm.entity.SearchResult;
 import pm.utils.DBUtil;
 import pm.utils.JsonUtil;
@@ -23,21 +24,20 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.*;
 
-public class PaperPaperSearcher {
-    private static PaperPaperSearcher ourInstance = new PaperPaperSearcher();
+public class PaperContentSearcher {
+    private static PaperContentSearcher ourInstance = new PaperContentSearcher();
     private static StandardAnalyzer analyzer = new StandardAnalyzer();
 
     private IndexSearcher searcher = null;
-    private String indexPath = "/home/zhangli/ssd-1t/pubmed-similar-paper-task-index";
-//    private String indexPath = "/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/data/index";
+    private String indexPath = "/home/zhangli/ssd-1t/lucene-index/pubmed/pubmed-all-paper-index";
+    private static String searchField = "content";
+    private int numTotalHits = 200;
 
-    private int numTotalHits = 20;
-
-    public static PaperPaperSearcher getInstance() {
+    public static PaperContentSearcher getInstance() {
         return ourInstance;
     }
 
-    private PaperPaperSearcher() {
+    private PaperContentSearcher() {
         try {
             init();
         } catch (IOException e) {
@@ -46,16 +46,28 @@ public class PaperPaperSearcher {
     }
 
     private void init() throws IOException {
-        IndexReader reader = DirectoryReader.open(NIOFSDirectory.open(Paths.get(indexPath)));
-        this.searcher = new IndexSearcher(reader);
+        NIOFSDirectory dir = new NIOFSDirectory(Paths.get(indexPath));
+//        MMapDirectory dir = new MMapDirectory(Paths.get(indexPath));
+//        dir.setPreload(true);
+//        FSDirectory fsDirectory = FSDirectory.open(Paths.get(indexPath));
+//        RAMDirectory dir = new RAMDirectory(fsDirectory, IOContext.READ);
+//        IndexReader reader = DirectoryReader.open(dir);
+
+        IndexReader reader = DirectoryReader.open(dir);
+        IndexSearcher searcher = new IndexSearcher(reader);
+        // The default similarity in Lucene and hence also Elasticsearch is however not a pure tf-idf implementation.
+        // It does actually have a form of document length normalization too.
+        searcher.setSimilarity(new BM25Similarity());
+        this.searcher = searcher;
+
     }
 
-    public List<SearchResult> search(String line, String field) throws ParseException, IOException {
+
+    public List<SearchResult> search(String line, QueryParser parser) throws ParseException, IOException {
         List<SearchResult> result = new ArrayList<>();
         if (line == null || line.trim().equals("")) {
             return result;
         }
-        QueryParser parser = new QueryParser(field, analyzer);
         Query query = parser.parse(line);
         ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
 //        System.out.println("search key: " + line);
@@ -66,7 +78,7 @@ public class PaperPaperSearcher {
 
             Document doc = searcher.doc(hit.doc);
             String searched_pm_id = doc.get("pm_id");
-            String matched_field = doc.get(field);
+            String matched_field = doc.get(searchField);
             Collection intersection = CollectionUtils.intersection(searchTokens, Arrays.asList(matched_field.split(" ")));
             int intersect = intersection.size();
 //            System.out.println(searched_pm_id + "\t[" + intersection.size() + "]\t" + StringUtils.join(intersection, " "));
@@ -78,7 +90,7 @@ public class PaperPaperSearcher {
     }
 
     public static void main(String[] args) throws Exception {
-        String savedFile = "/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/data/pubmed_paper_found_sample_similar_article.tsv";
+        String savedFile = "/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/pubmed_paper_found_sample_similar_article_using_bm25.tsv";
         BufferedReader rd = new BufferedReader(new FileReader(savedFile));
         String tmp;
         HashSet<String> eixtingPMIDSet = new HashSet<>();
@@ -91,19 +103,16 @@ public class PaperPaperSearcher {
         // TODO file append
         BufferedWriter writer = new BufferedWriter(new FileWriter(new File(savedFile), true));
 
-        PaperPaperSearcher searcher = PaperPaperSearcher.getInstance();
+        PaperContentSearcher searcher = PaperContentSearcher.getInstance();
         String pm_id = null;
-        String original_mesh, original_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference
-                = null;
+        String content = null;
         Connection conn = DBUtil.getConn();
-        String sql = "select pm_id,\n" +
-                "       arrayStringConcat(mesh_ids, ' ')                                                   as original_mesh,\n" +
-                "       arrayStringConcat(references, ' ')                                                 as original_reference,\n" +
-                "       arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ') as enhanced_mesh,\n" +
-                "       arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),\n" +
-                "                         ' ')                                                             as enhanced_reference,\n" +
-                "       arrayStringConcat(arrayDistinct(arrayConcat(m, n)), ' ')                           as enhanced_mesh_reference\n" +
-                "from sp.pubmed_randomly_selected_papers;\n";
+        String sql = "select pm_id, concat(clean_title, ' ', clean_abstract) as content\n" +
+                "from (select toString(pm_id) as pm_id, clean_title, clean_abstract from fp.paper_clean_content) any\n" +
+                "         inner join sp.pubmed_randomly_selected_papers using pm_id;\n";
+
+        QueryParser parser = new QueryParser(searchField, analyzer);
+
         try {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
@@ -121,26 +130,14 @@ public class PaperPaperSearcher {
                     System.out.println("contained: " + pm_id);
                     continue;
                 }
-                original_mesh = rs.getString(2);
-                original_reference = rs.getString(3);
-                enhanced_mesh = rs.getString(4);
-                enhanced_reference = rs.getString(5);
-                enhanced_mesh_reference = rs.getString(6);
+                content = rs.getString(2);
                 try {
-                    List<SearchResult> search_doc_original_mesh = searcher.search(original_mesh, "original_mesh");
-                    List<SearchResult> search_doc_original_reference = searcher.search(original_reference, "original_reference");
-                    List<SearchResult> search_doc_enhanced_mesh = searcher.search(enhanced_mesh, "enhanced_mesh");
-                    List<SearchResult> search_doc_enhanced_reference = searcher.search(enhanced_reference, "enhanced_reference");
-                    List<SearchResult> search_doc_enhanced_mesh_reference = searcher.search(enhanced_mesh_reference, "enhanced_mesh_reference");
+                    List<SearchResult> search_doc_original_mesh = searcher.search(content, parser);
                     writer.write(
                             StringUtils.join(
                                     new String[]{
                                             pm_id,
-                                            JsonUtil.Marshal(search_doc_original_mesh),
-                                            JsonUtil.Marshal(search_doc_original_reference),
-                                            JsonUtil.Marshal(search_doc_enhanced_mesh),
-                                            JsonUtil.Marshal(search_doc_enhanced_reference),
-                                            JsonUtil.Marshal(search_doc_enhanced_mesh_reference)
+                                            JsonUtil.Marshal(search_doc_original_mesh)
                                     },
                                     "\t"
                             )
@@ -160,3 +157,5 @@ public class PaperPaperSearcher {
         writer.close();
     }
 }
+
+

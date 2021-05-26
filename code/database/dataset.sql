@@ -367,6 +367,26 @@ where length(error) > 0
    or length(id_list) != 1
    or id_list[1] != concat('\"', pm_id, '\"');
 
+-- we found similar article in the field "pubmed_pubmed" has the longest record, whose ranking results are also identical with the PubMed interface.
+-- 137.79505433942313	17.926720831525344	4.120554217228016	4.9999341642601705	32.842172778916606	12.779190918657948	3.8077775949007227
+with (select count() from sp.pubmed_official_similar_paper) as num_papers
+select sum(length(pubmed_pubmed)) / num_papers              as avg_pubmed_pubmed,
+       sum(length(pubmed_pubmed_citedin)) / num_papers      as avg_pubmed_pubmed_citedin,
+       sum(length(pubmed_pubmed_combined)) / num_papers     as avg_pubmed_pubmed_combined,
+       sum(length(pubmed_pubmed_five)) / num_papers         as avg_pubmed_pubmed_five,
+       sum(length(pubmed_pubmed_refs)) / num_papers         as avg_pubmed_pubmed_refs,
+       sum(length(pubmed_pubmed_reviews)) / num_papers      as avg_pubmed_pubmed_reviews,
+       sum(length(pubmed_pubmed_reviews_five)) / num_papers as avg_pubmed_pubmed_reviews_five
+from sp.pubmed_official_similar_paper;
+-- 8567	22537	8	6	1904	2489	5
+select max(length(pubmed_pubmed))              as max_pubmed_pubmed,
+       max(length(pubmed_pubmed_citedin))      as max_pubmed_pubmed_citedin,
+       max(length(pubmed_pubmed_combined))     as max_pubmed_pubmed_combined,
+       max(length(pubmed_pubmed_five))         as max_pubmed_pubmed_five,
+       max(length(pubmed_pubmed_refs))         as max_pubmed_pubmed_refs,
+       max(length(pubmed_pubmed_reviews))      as max_pubmed_pubmed_reviews,
+       max(length(pubmed_pubmed_reviews_five)) as max_pubmed_pubmed_reviews_five
+from sp.pubmed_official_similar_paper;
 
 -- visual the titles of similar papers and examine the results
 select pm_id,
@@ -390,6 +410,8 @@ order by od
 ;
 
 -- create evaluation dataset. the ranking results are computed by an information retrieval tool
+-- verify how many broken instances
+-- 5
 select count()
 from sp.pubmed_randomly_selected_papers_found_similar_paper
 where length(original_mesh_field_search_result) == 0
@@ -399,10 +421,114 @@ where length(original_mesh_field_search_result) == 0
    or length(enhanced_mesh_reference_field_search_result) == 0
 ;
 
+-- TODO we may need to build more than one dataset using several strategies
+-- to demonstrate our these strategies is better enough for building the "gold standard" evaluation dataset, we need to compute the words overlap
+-- and we will see the overlapping is high than other strategies and the official result in PubMed.
+
+-- create sample in ranking fashion for Cosin Similarity loss, score between two papers and the similarity score.
+-- drop table sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation;
+create table if not exists sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation
+    ENGINE = MergeTree order by pm_id as
 select pm_id,
-       original_mesh_field_search_result,
-       original_reference_field_search_result,
-       enhanced_mesh_field_search_result,
-       enhanced_reference_field_search_result,
-       enhanced_mesh_reference_field_search_result
-from sp.pubmed_randomly_selected_papers_found_similar_paper;
+       clean_title,
+       clean_abstract,
+       rcm_pm_id,
+       rcm_clean_title,
+       rcm_clean_abstract,
+       train1_test0_val2,
+       score
+from (select toString(pm_id) as rcm_pm_id, clean_title as rcm_clean_title, clean_abstract rcm_clean_abstract
+      from fp.paper_clean_content) any
+         inner join (
+    select toString(pm_id) as pm_id, clean_title, clean_abstract, train1_test0_val2, rcm_pm_id, score
+    from (select pm_id, clean_title, clean_abstract from fp.paper_clean_content) any
+             inner join (
+        select pm_id,
+               train1_test0_val2,
+               tupleElement(item, 1) as rcm_pm_id,
+               tupleElement(item, 2) as score
+        from (
+                 select pm_id,
+
+                        (xxHash32(concat(pm_id, 'this is a random string')) % 100 as rand) <
+                        80 ? 1 : (rand < 90 ? 0 : 2)                                    as train1_test0_val2,
+
+                        tupleElement(enhanced_mesh_reference_field_search_result[1], 3) as number_entities,
+                        arrayMap(y->
+                                     (tupleElement(y, 1), tupleElement(y, 3) / number_entities),
+                                 arrayReverseSort(x->tupleElement(x, 3),
+                                                  arraySlice(enhanced_mesh_reference_field_search_result, 2))
+                            )                                                           as ehcmeshref_ranking
+                 from sp.pubmed_randomly_selected_papers_found_similar_paper
+                 where length(enhanced_mesh_reference_field_search_result) == 20
+                   and tupleElement(enhanced_mesh_reference_field_search_result[1], 1) == pm_id
+                   -- random sample a part of dataset for development
+                   and xxHash32(concat(pm_id, 'choahoejpobihjo')) % 100 < 5
+                 )
+                 array join ehcmeshref_ranking as item) using pm_id) using rcm_pm_id
+where lengthUTF8(clean_title) > 0
+   or lengthUTF8(clean_abstract) > 0
+   or lengthUTF8(rcm_clean_title) > 0
+   or lengthUTF8(rcm_clean_title) > 0;
+
+select count()
+from sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation;
+
+select count()
+from (
+      select count() as cnt
+      from sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation
+      group by pm_id
+      order by cnt desc)
+where cnt != 19;
+
+-- TODO Evaluating the ranking result of similar article by official PubMed
+-- 1002495
+select count()
+from sp.pubmed_official_similar_paper;
+
+-- 0 ranking order validation for PubMed similar articles, the similar paper is in corrected ranking order
+select count()
+from sp.pubmed_official_similar_paper
+where arrayMap(x->x[1], pubmed_pubmed) != arrayMap(z->z[1], arrayReverseSort(y->toFloat32(y[2]), pubmed_pubmed));
+
+
+select length(pubmed_pubmed) as num_similar_papers, count() as cnt
+from sp.pubmed_official_similar_paper
+group by num_similar_papers
+order by cnt desc;
+
+select overlap_cnt, count() as xlen
+from (
+      select pm_id,
+             pm_ranking,
+             ehcmeshref_ranking,
+             length(arrayIntersect(ehcmeshref_ranking, pm_ranking)) as overlap_cnt
+      from (with 30 as topn
+            select pm_id,
+                   arrayMap(x->x[1], arraySlice(arrayFilter(y->y[2] != '0', pubmed_pubmed), 1, topn)) as pm_ranking
+            from sp.pubmed_official_similar_paper
+            where length(pm_ranking) = topn) any
+               inner join (
+          select pm_id,
+                 arrayMap(y-> tupleElement(y, 1),
+                          arrayReverseSort(x->tupleElement(x, 3),
+                                           arraySlice(enhanced_mesh_reference_field_search_result, 2))
+                     ) as ehcmeshref_ranking
+          from sp.pubmed_randomly_selected_papers_found_similar_paper
+          where length(enhanced_mesh_reference_field_search_result) == 20
+            and tupleElement(enhanced_mesh_reference_field_search_result[1], 1) == pm_id) using pm_id
+         )
+group by overlap_cnt
+order by xlen desc
+;
+
+select tupleElement(arrayJoin(arrayMap(
+        i-> (i * 0.05, arrayCount(x->x > i * 0.05 and x <= (i + 1) * 0.05, groupArray(score) as scores)),
+        range(20))) as itemx, 1) as prob,
+       tupleElement(itemx, 2)    as cnt
+from sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation;
+
+select pm_id, concat(clean_title, ' ', clean_abstract) as content
+from (select toString(pm_id) as pm_id, clean_title, clean_abstract from fp.paper_clean_content) any
+         inner join sp.pubmed_randomly_selected_papers using pm_id;

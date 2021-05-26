@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.5.10)  14 MAY 2021 11:13
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.5.10)  22 MAY 2021 16:42
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -126,39 +126,108 @@ LaTeX Font Info:    ... okay on input line 16.
 {/home/zhangli/mydisk-2t/apps/tex-live-installed-files/texmf-var/fonts/map/pdft
 ex/updmap/pdftex.map}]
 
-LaTeX Warning: Citation `2006Text' on page 2 undefined on input line 28.
+LaTeX Warning: Citation `2006Text' on page 2 undefined on input line 29.
 
 
-LaTeX Warning: Citation `Enriching2009' on page 2 undefined on input line 37.
+LaTeX Warning: Citation `Enriching2009' on page 2 undefined on input line 38.
 
-[2] [3]
-No file main.bbl.
+[2]
+/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/manuscript/src/main.tex:77
+: You can't use `macro parameter character #' in horizontal mode.
+<argument> ...ps://pubmed.ncbi.nlm.nih.gov/help/##
+                                                  computation-of-similar-art...
+l.77 ...gov/help/#computation-of-similar-articles}
+                                                  , \footnote{https://pubmed...
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/manuscript/src/main.tex:77
+: You can't use `macro parameter character #' in horizontal mode.
+<argument> ...ps://pubmed.ncbi.nlm.nih.gov/help/##
+                                                  similar-articles\@finalstr...
+l.77 ...d.ncbi.nlm.nih.gov/help/#similar-articles}
+                                                  .
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+[3]
+
+LaTeX Warning: Citation `10.1093/bioinformatics/btp163' on page 4 undefined on 
+input line 104.
+
+/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/manuscript/src/main.tex:11
+0: You can't use `macro parameter character #' in vertical mode.
+l.110     #
+            plot a database enhanced here by NER and Europen PubMed.
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+
+Overfull \hbox (8.25217pt too wide) in paragraph at lines 112--114
+[]\OT1/cmr/m/n/10.95 Rules to se-lected ground truth simiar pa-per for bu-lid-i
+ng eval-u-a-tion dataset.
+ []
+
 [4]
+
+LaTeX Warning: Citation `xu2020building' on page 5 undefined on input line 125.
+
+
+/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/manuscript/src/main.tex:12
+8: You can't use `macro parameter character #' in horizontal mode.
+<argument> ...://europepmc.org/RestfulWebService##
+                                                  !/Europe32PMC32Articles32R...
+l.128 ...32PMC32Articles32RESTful32API/references}
+                                                   of Europe PMC, We are abl...
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+
+Overfull \hbox (50.66786pt too wide) in paragraph at lines 128--128
+[][]\OT1/cmr/m/n/9 https://europepmc.org/RestfulWebService!/Europe32PMC32Articl
+es32RESTful32API/references| 
+ []
+
+[5] [6]
+No file main.bbl.
+[7]
 (/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/manuscript/src/main.aux)
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 1156 strings out of 478846
- 17281 string characters out of 5840684
- 312627 words of memory out of 5000000
- 18837 multiletter control sequences out of 15000+600000
- 408967 words of font info for 46 fonts, out of 8000000 for 9000
+ 1170 strings out of 478846
+ 17470 string characters out of 5840684
+ 313627 words of memory out of 5000000
+ 18847 multiletter control sequences out of 15000+600000
+ 411171 words of font info for 54 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 54i,6n,62p,332b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 54i,8n,62p,519b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
 </home/zhangli/mydisk-2t/apps/tex-live-installed-files/texmf-dist/fonts/type1
 /public/amsfonts/cm/cmbx10.pfb></home/zhangli/mydisk-2t/apps/tex-live-installed
 -files/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></home/zhangli/mydi
 sk-2t/apps/tex-live-installed-files/texmf-dist/fonts/type1/public/amsfonts/cm/c
 mr10.pfb></home/zhangli/mydisk-2t/apps/tex-live-installed-files/texmf-dist/font
 s/type1/public/amsfonts/cm/cmr12.pfb></home/zhangli/mydisk-2t/apps/tex-live-ins
-talled-files/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb>
+talled-files/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></home/zhangli
+/mydisk-2t/apps/tex-live-installed-files/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmr6.pfb></home/zhangli/mydisk-2t/apps/tex-live-installed-files/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr8.pfb></home/zhangli/mydisk-2t/apps/tex-live-
+installed-files/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb>
 Output written on /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/manuscri
-pt/src/main.pdf (4 pages, 71572 bytes).
+pt/src/main.pdf (7 pages, 117380 bytes).
 PDF statistics:
- 37 PDF objects out of 1000 (max. 8388607)
- 25 compressed objects within 1 object stream
+ 60 PDF objects out of 1000 (max. 8388607)
+ 42 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

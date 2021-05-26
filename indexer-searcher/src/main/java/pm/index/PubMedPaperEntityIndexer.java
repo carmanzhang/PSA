@@ -1,8 +1,6 @@
 package pm.index;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.standard.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -33,11 +31,11 @@ import java.sql.Statement;
 //        return new TokenStreamComponents(source);
 //    }
 //}
-public class PubMedPaperIndexer {
+public class PubMedPaperEntityIndexer {
     private String indexPath;
     private IndexWriter writer = null;
 
-    public PubMedPaperIndexer(String indexPath) {
+    public PubMedPaperEntityIndexer(String indexPath) {
         this.indexPath = indexPath;
     }
 
@@ -54,13 +52,12 @@ public class PubMedPaperIndexer {
 
     private void indexDocs(IndexWriter writer) throws IOException {
         String pm_id = null;
-        String original_mesh, original_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference
+        String original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference
                 = null;
         Connection conn = DBUtil.getConn();
 
         String sql = "select pm_id,\n" +
-                "       arrayStringConcat(mesh_ids, ' ')                                                            as original_mesh,\n" +
-                "       arrayStringConcat(references, ' ')                                                          as original_reference,\n" +
+                "       arrayStringConcat(arrayConcat(mesh_ids, references), ' ')                                   as original_mesh_reference,\n" +
                 "       arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ')          as enhanced_mesh,\n" +
                 "       arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),' ')  as enhanced_reference,\n" +
                 "       arrayStringConcat(arrayDistinct(arrayConcat(m, n)), ' ')                                    as enhanced_mesh_reference\n" +
@@ -70,6 +67,7 @@ public class PubMedPaperIndexer {
                 "   or length(european_pm_references) > 0\n" +
                 "   or length(bern_entity_ids) > 0\n" +
                 "   or length(matched_mesh_ids) > 0;";
+        System.out.println(sql);
         try {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
@@ -83,13 +81,12 @@ public class PubMedPaperIndexer {
                 }
 
                 pm_id = rs.getString(1);
-                original_mesh = rs.getString(2);
-                original_reference = rs.getString(3);
-                enhanced_mesh = rs.getString(4);
-                enhanced_reference = rs.getString(5);
-                enhanced_mesh_reference = rs.getString(6);
+                original_mesh_reference = rs.getString(2);
+                enhanced_mesh = rs.getString(3);
+                enhanced_reference = rs.getString(4);
+                enhanced_mesh_reference = rs.getString(5);
 
-                indexPaper(pm_id, original_mesh, original_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference, writer);
+                indexPaper(pm_id, original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference, writer);
             }
 
         } catch (Exception e) {
@@ -98,21 +95,20 @@ public class PubMedPaperIndexer {
 
     }
 
-    private void indexPaper(String pm_id, String original_mesh, String original_reference, String enhanced_mesh, String enhanced_reference, String enhanced_mesh_reference, IndexWriter writer) throws IOException {
+    private void indexPaper(String pm_id, String original_mesh_reference, String enhanced_mesh, String enhanced_reference, String enhanced_mesh_reference, IndexWriter writer) throws IOException {
         Document doc = new Document();
         doc.add(new StringField("pm_id", pm_id, Field.Store.YES));
-        doc.add(new TextField("original_mesh", original_mesh, Field.Store.YES));
-        doc.add(new TextField("original_reference", original_reference, Field.Store.YES));
-        doc.add(new TextField("enhanced_mesh", enhanced_mesh, Field.Store.YES));
-        doc.add(new TextField("enhanced_reference", enhanced_reference, Field.Store.YES));
+        doc.add(new TextField("original_mesh_reference", original_mesh_reference, Field.Store.YES));
+//        doc.add(new TextField("enhanced_mesh", enhanced_mesh, Field.Store.YES));
+//        doc.add(new TextField("enhanced_reference", enhanced_reference, Field.Store.YES));
         doc.add(new TextField("enhanced_mesh_reference", enhanced_mesh_reference, Field.Store.YES));
 
         writer.addDocument(doc);
     }
 
     public static void main(String[] args) {
-        String indexPath = "~/ssd-1t/pubmed-similar-paper-task-index";
-        PubMedPaperIndexer indexer = new PubMedPaperIndexer(indexPath);
+        String indexPath = "/home/zhangli/ssd-1t/lucene-index/pubmed/pubmed-all-paper-entity-index";
+        PubMedPaperEntityIndexer indexer = new PubMedPaperEntityIndexer(indexPath);
         try {
             indexer.work();
         } catch (IOException e) {

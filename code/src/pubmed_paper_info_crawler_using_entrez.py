@@ -7,8 +7,8 @@ from Bio import Entrez
 
 from myio.data_reader import DBReader
 
-Entrez.email = "13156518189@163.com"
-existing_pm_ids = [json.loads(line.strip())['pm_id'] for line in open('data/pubmed_official_similar_paper_bulk.tsv')]
+Entrez.email = "myemail@163.com"
+existing_pm_ids = [json.loads(line.strip())['pm_id'] for line in open('../data/pubmed_official_similar_paper_bulk.tsv')]
 existing_pm_ids = set(existing_pm_ids)
 print(len(existing_pm_ids))
 df = DBReader.tcp_model_cached_read(cached_file_path='',

@@ -249,14 +249,17 @@ where length(mesh_ids) > 0
    or length(matched_mesh_ids) > 0
 ;
 
-select pm_id,
-       arrayStringConcat(mesh_ids, ' ')                                                   as original_mesh,
-       arrayStringConcat(references, ' ')                                                 as original_reference,
-       arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ') as enhanced_mesh,
-       arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),
-                         ' ')                                                             as enhanced_reference,
-       arrayStringConcat(arrayDistinct(arrayConcat(m, n)), ' ')                           as enhanced_mesh_reference
-from sp.pubmed_randomly_selected_papers;
+select count()
+from (
+      select pm_id,
+             arrayStringConcat(mesh_ids, ' ')                                                   as original_mesh,
+             arrayStringConcat(references, ' ')                                                 as original_reference,
+             arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ') as enhanced_mesh,
+             arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),
+                               ' ')                                                             as enhanced_reference,
+             arrayDistinct(arrayConcat(m, n))                                                   as enhanced_mesh_reference
+      from sp.pubmed_randomly_selected_papers)
+where length(enhanced_mesh_reference) > 400;
 
 -- TODO
 select cited_pm_id, citing_pm_id, 1 as weight
@@ -471,6 +474,16 @@ where lengthUTF8(clean_title) > 0
    or lengthUTF8(rcm_clean_title) > 0
    or lengthUTF8(rcm_clean_title) > 0;
 
+-- unified facet dataset
+select pm_id,
+       concat(clean_title, ' ', clean_abstract)         as content1,
+       concat(rcm_clean_title, ' ', rcm_clean_abstract) as content2,
+       score                                            as label_or_score,
+       train1_test0_val2
+from sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation
+order by rand();
+
+-- 49347
 select count()
 from sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation;
 
@@ -498,27 +511,71 @@ from sp.pubmed_official_similar_paper
 group by num_similar_papers
 order by cnt desc;
 
-select overlap_cnt, count() as xlen
-from (
+-- TODO In order to include PubMed similar article for benchmarking, we can use the overlap of PubMed similar article results and our gold standard datset
+-- However, the evaluation dataset may bias because it only contains the papers in PubMed similar article results.
+-- To enable a more fair comparison, we consider evaluating on our non-overlap dataset,
+-- but keep in mind that PubMed similar article result can not exist in this evaluation phrase.
+-- drop table sp.pubmed_similar_paper_bias_dataset;
+create table if not exists sp.pubmed_similar_paper_bias_dataset
+    ENGINE = MergeTree order by pm_id as
+select pm_id,
+       pred_ranking,
+       true_ehcmeshref_ranking
+from (with 250 as topn
       select pm_id,
-             pm_ranking,
-             ehcmeshref_ranking,
-             length(arrayIntersect(ehcmeshref_ranking, pm_ranking)) as overlap_cnt
-      from (with 30 as topn
-            select pm_id,
-                   arrayMap(x->x[1], arraySlice(arrayFilter(y->y[2] != '0', pubmed_pubmed), 1, topn)) as pm_ranking
-            from sp.pubmed_official_similar_paper
-            where length(pm_ranking) = topn) any
-               inner join (
-          select pm_id,
-                 arrayMap(y-> tupleElement(y, 1),
-                          arrayReverseSort(x->tupleElement(x, 3),
-                                           arraySlice(enhanced_mesh_reference_field_search_result, 2))
-                     ) as ehcmeshref_ranking
-          from sp.pubmed_randomly_selected_papers_found_similar_paper
-          where length(enhanced_mesh_reference_field_search_result) == 20
-            and tupleElement(enhanced_mesh_reference_field_search_result[1], 1) == pm_id) using pm_id
-         )
+             arrayReverseSort(y->y[2], arrayMap(x->
+                                                    [toUInt64(x[1]), toUInt64(x[2])],
+                                                arraySlice(arrayFilter(y->y[1] != pm_id and y[2] != '0',
+                                                                       pubmed_pubmed), 1,
+                                                           topn))) as pred_ranking
+      from sp.pubmed_official_similar_paper
+      where length(pred_ranking) <= topn) any
+         inner join (
+    with 1000.0 as scaler, 0.3 as true_similar_articles_threshold
+    select pm_id,
+           tupleElement(enhanced_mesh_reference_field_search_result[1], 3) as num_entities,
+           arrayReverseSort(z->z[2],
+                            arrayFilter(y->y[2] > (scaler * true_similar_articles_threshold), arrayMap(x->
+                                                                                                           [toUInt64(tupleElement(x, 1)), toUInt64(round(tupleElement(x, 3) * scaler / num_entities))],
+                                                                                                       arraySlice(enhanced_mesh_reference_field_search_result, 2)))
+               )                                                           as true_ehcmeshref_ranking
+    from sp.pubmed_randomly_selected_papers_found_similar_paper
+    where length(enhanced_mesh_reference_field_search_result) == 20
+      and tupleElement(enhanced_mesh_reference_field_search_result[1], 1) == pm_id
+      and length(true_ehcmeshref_ranking) > 0
+    ) using pm_id
+;
+-- 618325
+select count()
+from sp.pubmed_similar_paper_bias_dataset;
+-- select pm_id, ranking_order, overlap_cnt
+-- from (
+--       select pm_id,
+--              pm_ranking,
+--              ehcmeshref_ranking,
+--              arrayFilter(n->has(ehcmeshref_ranking, n), pm_ranking) as overlap_pm_ranking,
+--              arrayFilter(n->has(pm_ranking, n), ehcmeshref_ranking) as overlap_ehcmeshref_ranking,
+--              arrayMap(x->arrayFirstIndex(y->y=x, overlap_ehcmeshref_ranking), overlap_pm_ranking) as ranking_order,
+--              length(arrayIntersect(ehcmeshref_ranking, pm_ranking)) as overlap_cnt
+--       from (with 250 as topn
+--             select pm_id,
+--                    arrayMap(x->x[1], arraySlice(arrayFilter(y->y[2] != '0', pubmed_pubmed), 1, topn)) as pm_ranking
+--             from sp.pubmed_official_similar_paper
+--             where length(pm_ranking) <= topn) any
+--                inner join (
+--           select pm_id,
+--                  arrayMap(y-> tupleElement(y, 1),
+--                           arrayReverseSort(x->tupleElement(x, 3),
+--                                            arraySlice(enhanced_mesh_reference_field_search_result, 2))
+--                      ) as ehcmeshref_ranking
+--           from sp.pubmed_randomly_selected_papers_found_similar_paper
+--           where length(enhanced_mesh_reference_field_search_result) == 20
+--             and tupleElement(enhanced_mesh_reference_field_search_result[1], 1) == pm_id) using pm_id)
+-- where length(ranking_order) > 1
+-- ;
+
+select overlap_cnt, count() as xlen
+from sp.pubmed_similar_paper_bias_dataset
 group by overlap_cnt
 order by xlen desc
 ;

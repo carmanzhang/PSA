@@ -2,13 +2,15 @@ import json
 from collections import Counter
 from itertools import chain, groupby
 from random import random
-
+from config import set_list_length
+from scipy.stats import spearmanr, pearsonr
 import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, classification_report, \
     roc_auc_score
 
 from metric import rank_metrics
+from scipy.spatial import distance
 
 metric_names = ['acc', 'p', 'r', 'f1', 'macro_f1', 'micro_f1']
 
@@ -19,7 +21,20 @@ pd.set_option('display.max_columns', None)  # 显示所有列
 pd.set_option('expand_frame_repr', False)  # 设置不换行
 
 field_split = '#'
-set_list_length = 60
+
+
+def cosin_sim_score(v1, v2):
+    return 1 - distance.cosine(v1, v2)
+
+
+def batch_cosin_sim_score(v1, v2):
+    return [cosin_sim_score(a, b) for a, b in zip(v1, v2)]
+
+
+def report_correlation_metrics(pred_score, true_score):
+    pearsonr_res = pearsonr(pred_score, true_score)
+    spearmanr_res = spearmanr(pred_score, true_score)
+    return pearsonr_res, spearmanr_res
 
 
 def pretty_metrics(kv: list, decimal=2, pctg=False, sep=field_split):
@@ -80,9 +95,9 @@ def linear_scale(data):
     return scaled_data
 
 
-def report_ir_metrics(positions_scores, need_scale=False, check_length=True, list_length=set_list_length,
-                      check_sum=True,
-                      list_sum=1):
+def report_classification_metrics(positions_scores, need_scale=False, check_length=True, list_length=set_list_length,
+                                  check_sum=True,
+                                  list_sum=1):
     try:
         l = len(positions_scores)
         if check_sum:
@@ -107,19 +122,19 @@ def report_ir_metrics(positions_scores, need_scale=False, check_length=True, lis
         # scores = np.array(scores)[idx]
         scores = linear_scale(scores) if need_scale else scores
         roc_auc = roc_auc_score(positions, scores)
-        ir_metrics_names, ir_metrics = calc_confuse_matrix_based_metrics(positions, scores)
-        # ir_metrics.extend([('auc', roc_auc), ('gauc', group_roc_auc)])
-        ir_metrics_names = ir_metrics_names + ['auc', 'gauc']
-        ir_metrics = ir_metrics + [roc_auc, group_roc_auc]
-        ir_metrics_in_string = json.dumps({
-            'metric_name': field_split.join(ir_metrics_names),
-            'value': pretty_metrics(list(zip(ir_metrics_names, ir_metrics)), decimal=2, pctg=True, sep=field_split)
+        classification_metrics_names, classification_metrics = calc_confuse_matrix_based_metrics(positions, scores)
+        # classification_metrics.extend([('auc', roc_auc), ('gauc', group_roc_auc)])
+        classification_metrics_names = classification_metrics_names + ['auc', 'gauc']
+        classification_metrics = classification_metrics + [roc_auc, group_roc_auc]
+        classification_metrics_in_string = json.dumps({
+            'metric_name': field_split.join(classification_metrics_names),
+            'value': pretty_metrics(list(zip(classification_metrics_names, classification_metrics)), decimal=2,
+                                    pctg=True, sep=field_split)
         }, indent=4, sort_keys=True).replace('#', '\t')
-        return dict(zip(ir_metrics_names, ir_metrics)), ir_metrics_in_string
+        return dict(zip(classification_metrics_names, classification_metrics)), classification_metrics_in_string
     except Exception as e:
         print(e)
         return {}, ''
-
 
 
 def report_ranking_metrics(qid, preds, reals, print_intermediate_result=True):
@@ -178,3 +193,21 @@ def get_ranking_metric_values(all_query_ranks, check_length=True, list_length=se
     }, indent=4, sort_keys=True).replace('#', '\t')
 
     return topns, num_queries, maps, mrrs, ndcgs, ranking_metrics_in_string
+
+
+def get_various_length_ranking_metric(all_query_ranks, list_length=set_list_length):
+    print('length distribution: ', Counter([len(n) for n in all_query_ranks]))
+
+    # print('evaluate %s queries after delete shorter query' % len(all_query_ranks))
+    map = rank_metrics.mean_average_precision(all_query_ranks)
+    mrr = rank_metrics.mean_reciprocal_rank(all_query_ranks)
+    ndcg = np.average([rank_metrics.ndcg_at_k(r, k=len(r)) for r in all_query_ranks])
+
+    ranking_metrics_in_string = json.dumps({
+        'num_query': len(all_query_ranks),
+        'map': map,
+        'mrr': mrr,
+        'ndcg': ndcg
+    }, indent=4, sort_keys=True).replace('#', '\t')
+
+    return ranking_metrics_in_string

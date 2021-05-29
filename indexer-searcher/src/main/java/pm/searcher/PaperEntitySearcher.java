@@ -9,6 +9,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -70,9 +71,12 @@ public class PaperEntitySearcher {
         if (line == null || line.trim().equals("")) {
             return result;
         }
+
         QueryParser parser = new QueryParser(field, analyzer);
+
         Query query = parser.parse(line);
         ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
+
 //        System.out.println("search key: " + line);
         List<String> searchTokens = Arrays.asList(line.split(" "));
 

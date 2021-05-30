@@ -1,5 +1,6 @@
 import torch
 from sentence_transformers import models, InputExample
+from sentence_transformers.evaluation import SimilarityFunction
 from sklearn.decomposition import PCA
 from scipy.spatial import distance
 from sentence_transformers import SentenceTransformer, InputExample, losses
@@ -18,8 +19,8 @@ class ActionProcessor:
     def __init__(self, model_name_or_path, data):
         self.model = PreTrainedModel(name_or_path=model_name_or_path).load()
         self.df_train = data[0]
-        self.df_val = data[2]
-        self.df_test = data[1]
+        self.df_val = data[1]
+        self.df_test = data[2]
 
     def reload_model(self, save_model_path):
         """:param
@@ -62,7 +63,7 @@ class ActionProcessor:
         self.model = model
         return self
 
-    def fin_tune(self, save_model_path, epochs, batch_size, warmup_steps=100, evaluation_steps=5000):
+    def fine_tune(self, save_model_path, optimizer_params, epochs, batch_size, warmup_steps=100, evaluation_steps=5000):
         model = self.model
         df_train, df_val = self.df_train, self.df_val
         print(df_train.columns.values)
@@ -73,15 +74,18 @@ class ActionProcessor:
         train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
         print('load train/val data')
 
+        # TODO try other losses and evaluators
         loss = losses.CosineSimilarityLoss(model)
 
         # prepare evaluation data
         evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['content1'].values, df_val['content2'].values,
-                                                            df_val['label_or_score'].values.astype('float'))
+                                                            df_val['label_or_score'].values.astype('float'),
+                                                            main_similarity=SimilarityFunction.COSINE)
 
         # Tune the model
         model.fit(train_objectives=[(train_dataloader, loss)],
                   epochs=epochs,
+                  optimizer_params=optimizer_params,
                   warmup_steps=warmup_steps,
                   evaluator=evaluator,
                   evaluation_steps=evaluation_steps,
@@ -115,9 +119,9 @@ class ActionProcessor:
 
     def evaluate(self):
         content_list1 = self.df_test['content1'].values.tolist()
-        content_list2 = self.df_test['content1'].values.tolist()
-        sent_eb1 = [n[1] for n in self._infer(content_list1)]
-        sent_eb2 = [n[1] for n in self._infer(content_list2)]
+        content_list2 = self.df_test['content2'].values.tolist()
+        sent_eb1 = [n[1] for n in self.infer(content_list1)]
+        sent_eb2 = [n[1] for n in self.infer(content_list2)]
 
         label_or_score = self.df_test['label_or_score'].values.tolist()
         cosin_sim_scores = all_metric.batch_cosin_sim_score(sent_eb1, sent_eb2)

@@ -14,6 +14,7 @@ proj_base_path = os.path.abspath(os.path.join(src_base_path, os.pardir))
 saved_result_path = os.path.join(src_base_path, 'result')
 # print(proj_base_path)
 res_dir = os.path.join(proj_base_path, 'data')
+development_path = os.path.join(res_dir, 'pubmed_similar_paper_development_dataset.pkl')
 saved_model_base_path = os.path.join(res_dir, 'saved_best_models')
 pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embedding.tsv')
 
@@ -21,6 +22,7 @@ pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embed
 concise_vector_len = 10
 epochs = 12
 batch_size = 8
+max_seq_length = 300
 warmup_steps = 3000
 evaluation_steps = 5000
 optimizer_params = {'lr': 2e-5}
@@ -79,11 +81,28 @@ ukplab_archived_model = [
 
 supply_models = [
     '/home/zhangli/pre-trained-models/scibert_scivocab_uncased',  # batch8
-    '/home/zhangli/pre-trained-models/biobert-v1.1']
+    '/home/zhangli/pre-trained-models/biobert-v1.1'
+]
 
-available_models = ukplab_archived_model + supply_models
+pretrained_models = ukplab_archived_model + supply_models
 
 # TODO
+saved_tuned_models = []
+for d in os.listdir(saved_model_base_path):
+    subdir = os.path.join(saved_model_base_path, d)
+    for sd in os.listdir(subdir):
+        model_path = os.path.join(subdir, sd)
+        if len(os.listdir(model_path)) > 0:
+            # print('1', model_path)
+            saved_tuned_models.append(model_path)
+        else:
+            # print('0', model_path)
+            pass
+
+# TODO use which to evaluate
+# models_in_use = saved_tuned_models
+models_in_use = pretrained_models
+
 best_model_used_to_infer_entire_pubmed = ''
 
 # metrics config
@@ -92,3 +111,6 @@ set_list_length = 60
 # action config
 action_availables = ['evaluate', 'fine_tune_evaluate', 'compress_vector_fine_tune_evaluate', 'infer']
 to_do_what = action_availables[1]
+
+if 'tune' in to_do_what:
+    assert models_in_use != saved_tuned_models

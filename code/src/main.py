@@ -5,12 +5,12 @@ from model.action_processing import ActionProcessor
 from myio.data_reader import DBReader
 
 # >>>>> Step 1. load dataset <<<<<<
-df = DBReader.tcp_model_cached_read("cached/XXXX",
+df = DBReader.tcp_model_cached_read("",  # development_path
                                     """select concat(clean_title, ' ', clean_abstract)         as content1,
                                            concat(rcm_clean_title, ' ', rcm_clean_abstract) as content2,
                                            score                                            as label_or_score,
                                            train1_test0_val2
-                                    from sp.pubmed_similar_paper_dataset_for_cosin_similarity_loss_evaluation
+                                    from sp.train_val_set_pairwise_sim_score
                                     order by rand();""", cached=False)
 
 use_columns = ['content1', 'content2', 'label_or_score']
@@ -20,10 +20,10 @@ df_train, df_val, df_test = df[df['train1_test0_val2'] == 1][use_columns], df[df
 print('load train/val/test data', df_train.shape, df_val.shape, df_test.shape)
 
 # >>>>> Step 2. choose an action in config.py and to do it <<<<<<
-print('available models are: ', available_models)
+print('available models are: ', models_in_use)
 print()
-for idx, model_name_or_path in enumerate(available_models):
-    try:
+for idx, model_name_or_path in enumerate(models_in_use):
+    # try:
         model_name = model_name_or_path[
                      model_name_or_path.rindex('/') + 1:] if '/' in model_name_or_path else model_name_or_path
         save_model_dir = os.path.join(saved_model_base_path, model_name)
@@ -36,11 +36,14 @@ for idx, model_name_or_path in enumerate(available_models):
         processor = ActionProcessor(model_name_or_path, [df_train, df_val, df_test])
 
         if to_do_what == 'evaluate':
+            print('max_seq_length: ', processor.model.max_seq_length)
             print('evaluation metrics: ')
             res = processor.evaluate()
             print(res)
 
         elif to_do_what == 'fine_tune_evaluate':
+            processor.model.max_seq_length = max_seq_length
+            print('updated max_seq_length: ', processor.model.max_seq_length)
             res = processor.fine_tune(
                 save_model_path=os.path.join(save_model_dir, 'tuned'),
                 optimizer_params=optimizer_params,
@@ -51,6 +54,8 @@ for idx, model_name_or_path in enumerate(available_models):
             print(res)
             print()
         elif to_do_what == 'compress_vector_fine_tune_evaluate':
+            processor.model.max_seq_length = max_seq_length
+            print('updated max_seq_length: ', processor.model.max_seq_length)
             res = processor.rebuild_model(concise_vector_len=concise_vector_len).fine_tune(
                 save_model_path=os.path.join(save_model_dir, 'compressed_%d' % concise_vector_len),
                 optimizer_params=optimizer_params,
@@ -74,5 +79,5 @@ for idx, model_name_or_path in enumerate(available_models):
                 pd.DataFrame(sent_eb, index=None, columns=['pm_id', 'embedding']).to_csv(pubmed_infer_embedding_file,
                                                                                          index=False, header=False,
                                                                                          sep='\t', mode='a')
-    except Exception as e:
-        print(e)
+    # except Exception as e:
+    #     print(e)

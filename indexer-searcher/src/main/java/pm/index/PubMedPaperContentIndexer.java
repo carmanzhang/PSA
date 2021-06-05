@@ -32,7 +32,7 @@ public class PubMedPaperContentIndexer {
 //        Analyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig iwc = new IndexWriterConfig(new StandardAnalyzer());
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-        iwc.setRAMBufferSizeMB(25600.0);
+        iwc.setRAMBufferSizeMB(2560.0);
         writer = new IndexWriter(dir, iwc);
         indexDocs(writer);
         writer.close();
@@ -40,11 +40,10 @@ public class PubMedPaperContentIndexer {
 
     private void indexDocs(IndexWriter writer) throws IOException {
         String pm_id = null;
-        String clean_content, clean_mesh_headings, clean_keywords = null;
+        String clean_content = null;
         Connection conn = DBUtil.getConn();
 
-        String sql = "select pm_id, concat(clean_title, ' ', clean_abstract) as clean_content, clean_mesh_headings, clean_keywords\n" +
-                "from fp.paper_clean_content;";
+        String sql = "select pm_id, content from sp.pubmed_paper_content_entity_data_for_indexing_searching;";
         try {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
@@ -59,10 +58,7 @@ public class PubMedPaperContentIndexer {
 
                 pm_id = rs.getString(1);
                 clean_content = rs.getString(2);
-                clean_mesh_headings = rs.getString(3);
-                clean_keywords = rs.getString(4);
-
-                indexPaperContent(pm_id, clean_content, clean_mesh_headings, clean_keywords, writer);
+                indexPaperContent(pm_id, clean_content, writer);
             }
 
         } catch (Exception e) {
@@ -71,13 +67,10 @@ public class PubMedPaperContentIndexer {
 
     }
 
-    private void indexPaperContent(String pm_id, String cleanContent, String cleanMesh, String cleanKeywords, IndexWriter writer) throws IOException {
+    private void indexPaperContent(String pm_id, String cleanContent, IndexWriter writer) throws IOException {
         Document doc = new Document();
         doc.add(new StringField("pm_id", pm_id, Field.Store.YES));
         doc.add(new TextField("content", cleanContent, Field.Store.YES));
-//        doc.add(new TextField("mesh", cleanMesh, Field.Store.YES));
-//        doc.add(new TextField("keyword", cleanKeywords, Field.Store.YES));
-
         writer.addDocument(doc);
     }
 

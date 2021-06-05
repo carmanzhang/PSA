@@ -1,0 +1,25 @@
+1. calculate lexical overlap (or other measurement can quantify text similarity at lexical level) to demonstrate the advantage of our data generation method. The result should place at Analysis/Ablation section.
+    Competing methods:
+        PubMed official ranking result
+        PubMed citation BM25 ranking result,
+        Only Original MeSH based method
+        Only Original Citation based method
+        Original MeSH + Original Citation based method
+        Only Enhanced MeSH based method
+        Only Enhanced Citation based method
+        Enhanced MeSH + Enhanced Citation based method (Our)
+
+2. retrieval more "ground truth" result for further evaluation
+    speed up searching using fast tools
+
+3. make two kinds of evaluation result.
+    online/offline evaluation.
+    offline evaluation means predict the order of fixed-length ranking "ground truth" only on evaluation dataset.
+    online evaluation means retrieving the most similar results using encoded embedding + similar search, then evaluate the ranking result against the ground truth ranking result.
+    Note that, in online evaluation, the  similar articles in official PubMed will be introduce for comparison.
+
+    For offline evaluation, the test set should be a fixed-length sequence of PMID which is ordered by the similarity with the anchor PMID. The train/dev set can be different according to loss that model used.
+    The online evaluation goes further, its dataset is the same as the offline evaluation; however, the goal of final evaluation is not to evaluate on the re-ranking result on fixed-size ranking result.
+    Instead, it will evaluate that what the extent of the embedding-based similar search will be using fine-tuned models (available from offline step), the performance should be measured against the test set of ground truth ranking result.
+    Note that, to reach this aim, we must drive all the embedding for the entire PubMed.
+

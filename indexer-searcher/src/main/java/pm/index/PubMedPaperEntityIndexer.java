@@ -1,7 +1,7 @@
 package pm.index;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.*;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -18,19 +18,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-//class MyAnalyzer extends Analyzer{
-//
-//    public MyAnalyzer() {
-//    }
-//
-//    @Override
-//    protected TokenStreamComponents createComponents(String fieldName) {
-//        final Tokenizer source=new StandardTokenizer();
-//        //添加过滤器TokenFilter
-//        //LengthFielter results=new LengthFilter(source,1,3);
-//        return new TokenStreamComponents(source);
-//    }
-//}
 public class PubMedPaperEntityIndexer {
     private String indexPath;
     private IndexWriter writer = null;
@@ -52,21 +39,11 @@ public class PubMedPaperEntityIndexer {
 
     private void indexDocs(IndexWriter writer) throws IOException {
         String pm_id = null;
-        String original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference
+        String original_mesh, original_reference, original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference
                 = null;
         Connection conn = DBUtil.getConn();
 
-        String sql = "select pm_id,\n" +
-                "       arrayStringConcat(arrayConcat(mesh_ids, references), ' ')                                   as original_mesh_reference,\n" +
-                "       arrayStringConcat(arrayDistinct(arrayConcat(mesh_ids, bern_entity_ids) as m), ' ')          as enhanced_mesh,\n" +
-                "       arrayStringConcat(arrayDistinct(arrayConcat(references, european_pm_references) as n),' ')  as enhanced_reference,\n" +
-                "       arrayStringConcat(arrayDistinct(arrayConcat(m, n)), ' ')                                    as enhanced_mesh_reference\n" +
-                "from sp.pubmed_paper_mesh_reference_bioentity\n" +
-                "where length(mesh_ids) > 0\n" +
-                "   or length(references) > 0\n" +
-                "   or length(european_pm_references) > 0\n" +
-                "   or length(bern_entity_ids) > 0\n" +
-                "   or length(matched_mesh_ids) > 0;";
+        String sql = "select pm_id, original_mesh, original_reference, original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference from sp.pubmed_paper_content_entity_data_for_indexing_searching;";
         System.out.println(sql);
         try {
             Statement stmt = conn.createStatement();
@@ -81,12 +58,14 @@ public class PubMedPaperEntityIndexer {
                 }
 
                 pm_id = rs.getString(1);
-                original_mesh_reference = rs.getString(2);
-                enhanced_mesh = rs.getString(3);
-                enhanced_reference = rs.getString(4);
-                enhanced_mesh_reference = rs.getString(5);
+                original_mesh = rs.getString(2);
+                original_reference = rs.getString(3);
+                original_mesh_reference = rs.getString(4);
+                enhanced_mesh = rs.getString(5);
+                enhanced_reference = rs.getString(6);
+                enhanced_mesh_reference = rs.getString(7);
 
-                indexPaper(pm_id, original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference, writer);
+                indexPaper(pm_id, original_mesh, original_reference, original_mesh_reference, enhanced_mesh, enhanced_reference, enhanced_mesh_reference, writer);
             }
 
         } catch (Exception e) {
@@ -95,12 +74,22 @@ public class PubMedPaperEntityIndexer {
 
     }
 
-    private void indexPaper(String pm_id, String original_mesh_reference, String enhanced_mesh, String enhanced_reference, String enhanced_mesh_reference, IndexWriter writer) throws IOException {
+    /**
+     * There are two basic ways a document can be written into Lucene.
+     * Indexed - The field is analyzed and indexed, and can be searched.
+     * Stored - The field's full text is stored and will be returned with search results.
+     */
+    private void indexPaper(String pm_id, String original_mesh, String original_reference, String original_mesh_reference, String enhanced_mesh, String enhanced_reference, String enhanced_mesh_reference, IndexWriter writer) throws IOException {
         Document doc = new Document();
+
         doc.add(new StringField("pm_id", pm_id, Field.Store.YES));
+
+        doc.add(new TextField("original_mesh", original_mesh, Field.Store.YES));
+        doc.add(new TextField("original_reference", original_reference, Field.Store.YES));
         doc.add(new TextField("original_mesh_reference", original_mesh_reference, Field.Store.YES));
-//        doc.add(new TextField("enhanced_mesh", enhanced_mesh, Field.Store.YES));
-//        doc.add(new TextField("enhanced_reference", enhanced_reference, Field.Store.YES));
+
+        doc.add(new TextField("enhanced_mesh", enhanced_mesh, Field.Store.YES));
+        doc.add(new TextField("enhanced_reference", enhanced_reference, Field.Store.YES));
         doc.add(new TextField("enhanced_mesh_reference", enhanced_mesh_reference, Field.Store.YES));
 
         writer.addDocument(doc);

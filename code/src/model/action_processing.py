@@ -76,6 +76,13 @@ class ActionProcessor:
 
         # TODO try other losses and evaluators
         loss = losses.CosineSimilarityLoss(model)
+        # loss = losses.MultipleNegativesRankingLoss
+        # loss = losses.TripletLoss
+        #
+        # loss = losses.BatchHardSoftMarginTripletLoss
+        # loss = losses.BatchAllTripletLoss
+        # loss = losses.BatchHardTripletLoss
+        # loss = losses.ContrastiveLoss
 
         # prepare evaluation data
         evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['content1'].values, df_val['content2'].values,

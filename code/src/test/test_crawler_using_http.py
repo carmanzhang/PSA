@@ -9,7 +9,7 @@ from myio.data_reader import DBReader
 
 fw = open('data/pubmed_official_similar_paper.tsv', 'a')
 df = DBReader.tcp_model_cached_read(cached_file_path='',
-                                    sql='select pm_id from sp.pubmed_randomly_selected_papers_found_similar_paper',
+                                    sql='select pm_id from sp.pubmed_randomly_selected_papers',
                                     cached=False)
 pm_id_arr = df['pm_id'].values
 for i, pm_id in enumerate(pm_id_arr):

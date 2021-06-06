@@ -1,11 +1,17 @@
 import os
 
 # database config
-db_host = '127.0.0.1'
-db_tcp_port = '9001'
-db_http_port = '8124'
-db_name = 'sp'
-db_passwd = 'root'
+from enum import Enum
+
+
+class DBConfig:
+    db_user = 'default'
+    db_passwd = 'root'
+    db_host = '127.0.0.1'
+    db_tcp_port = '9001'
+    db_http_port = '8124'
+    db_in_use = 'sp'
+
 
 # resource config
 src_base_path = os.path.dirname(os.path.abspath(__file__))
@@ -18,14 +24,39 @@ development_path = os.path.join(res_dir, 'pubmed_similar_paper_development_datas
 saved_model_base_path = os.path.join(res_dir, 'saved_best_models')
 pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embedding.tsv')
 
+
 # model config
-concise_vector_len = 10
-epochs = 12
-batch_size = 8
-max_seq_length = 300
-warmup_steps = 3000
-evaluation_steps = 5000
-optimizer_params = {'lr': 2e-5}
+class ModelConfig:
+    loss = 'COSIN'
+    epoch = 12
+    batch_size = 8
+    optimizer_params = {'lr': 2e-5}
+    max_seq_length = 300
+    concise_vector_len = 10
+    warmup_steps = 3000
+    evaluation_steps = 5000
+
+    @staticmethod
+    def from_dict(d: dict):
+        ModelConfig.loss = d['loss'] if 'loss' in d else ModelConfig.loss
+        ModelConfig.concise_vector_len = d[
+            'concise_vector_len'] if 'concise_vector_len' in d else ModelConfig.concise_vector_len
+        ModelConfig.epoch = d['epoch'] if 'epoch' in d else ModelConfig.epoch
+        ModelConfig.batch_size = d['batch_size'] if 'batch_size' in d else ModelConfig.batch_size
+        ModelConfig.max_seq_length = d['max_seq_length'] if 'max_seq_length' in d else ModelConfig.max_seq_length
+        ModelConfig.warmup_steps = d['warmup_steps'] if 'warmup_steps' in d else ModelConfig.warmup_steps
+        ModelConfig.evaluation_steps = d[
+            'evaluation_steps'] if 'evaluation_steps' in d else ModelConfig.evaluation_steps
+        ModelConfig.optimizer_params = {'lr': d['lr']} if 'lr' in d else ModelConfig.optimizer_params
+        return ModelConfig
+
+    @staticmethod
+    def one_line_string_config():
+        s = 'ls%s-ep%d-bs%d-lr%f-vl%d-sl%d' % (
+            ModelConfig.loss, ModelConfig.epoch, ModelConfig.batch_size, ModelConfig.optimizer_params['lr'],
+            ModelConfig.concise_vector_len, ModelConfig.max_seq_length)
+        return s
+
 
 """
 which pre-trained model can we use?, please refer to https://www.sbert.net/docs/pretrained_models.html
@@ -73,8 +104,8 @@ ukplab_archived_model = [
     'stsb-roberta-large',
     'stsb-distilroberta-base-v2',
     'stsb-roberta-base',
-    'stsb-roberta-base-v2', # batch8
-    'stsb-mpnet-base-v2', # batch8
+    'stsb-roberta-base-v2',  # batch8
+    'stsb-mpnet-base-v2',  # batch8
 
     'allenai-specter'
 ]
@@ -108,9 +139,16 @@ best_model_used_to_infer_entire_pubmed = ''
 # metrics config
 set_list_length = 60
 
-# action config
-action_availables = ['evaluate', 'fine_tune_evaluate', 'compress_vector_fine_tune_evaluate', 'infer']
-to_do_what = action_availables[1]
 
-if 'tune' in to_do_what:
+# action config
+class Action(Enum):
+    EVALUATE = 'evaluate'
+    FINE_TUNE_EVALUATE = 'fine_tune_evaluate'
+    COMPRESS_VECTOR_FINE_TUNE_EVALUATE = 'compress_vector_fine_tune_evaluate'
+    INFER = 'infer'
+
+
+to_do_what = Action.FINE_TUNE_EVALUATE
+
+if 'tune' in to_do_what.value:
     assert models_in_use != saved_tuned_models

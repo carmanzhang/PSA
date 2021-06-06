@@ -63,7 +63,10 @@ class ActionProcessor:
         self.model = model
         return self
 
-    def fine_tune(self, save_model_path, optimizer_params, epochs, batch_size, warmup_steps=100, evaluation_steps=5000):
+    def fine_tune(self, save_model_path, model_config):
+        optimizer_params, epoch, batch_size, warmup_steps, evaluation_steps \
+            = model_config.optimizer_params, model_config.epoch, model_config.batch_size, model_config.warmup_steps, model_config.evaluation_steps
+
         model = self.model
         df_train, df_val = self.df_train, self.df_val
         print(df_train.columns.values)
@@ -91,7 +94,7 @@ class ActionProcessor:
 
         # Tune the model
         model.fit(train_objectives=[(train_dataloader, loss)],
-                  epochs=epochs,
+                  epochs=epoch,
                   optimizer_params=optimizer_params,
                   warmup_steps=warmup_steps,
                   evaluator=evaluator,

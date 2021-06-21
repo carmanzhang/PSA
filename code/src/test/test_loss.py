@@ -64,3 +64,4 @@ train_examples = [InputExample(texts=['This is a positive pair', 'Where the dist
 train_dataset = SentencesDataset(train_examples, model)
 train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=train_batch_size)
 train_loss = losses.ContrastiveLoss(model=model)
+

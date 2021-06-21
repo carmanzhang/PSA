@@ -98,7 +98,8 @@ ukplab_archived_model = [
     # 'average_word_embeddings_komninos',
     # 'average_word_embeddings_levy_dependency',
     # 'average_word_embeddings_glove.840B.300d',
-
+    # TODO include bert-base in for comparison to increase the diversity of baselines
+    # TODO add sota unspervised learning model TSDAE
     'stsb-bert-base',
     'stsb-distilbert-base',
     'stsb-roberta-large',

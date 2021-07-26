@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Evlaution-manuscript/Evlaution-manuscript.iml" filepath="$PROJECT_DIR$/Evlaution-manuscript/Evlaution-manuscript.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Review-manuscript/Review-manuscript.iml" filepath="$PROJECT_DIR$/Review-manuscript/Review-manuscript.iml" />
       <module fileurl="file://$PROJECT_DIR$/code/code.iml" filepath="$PROJECT_DIR$/code/code.iml" />
       <module fileurl="file://$PROJECT_DIR$/indexer-searcher/indexer-searcher.iml" filepath="$PROJECT_DIR$/indexer-searcher/indexer-searcher.iml" />
-      <module fileurl="file://$PROJECT_DIR$/manuscript/manuscript.iml" filepath="$PROJECT_DIR$/manuscript/manuscript.iml" />
     </modules>
   </component>
 </project>

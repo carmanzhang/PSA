@@ -32,6 +32,7 @@
 
 
 
+
     \section{Introduction}
     Simialr article recomendation is an important feature in many academic seaching database/digital libraries. It enable users to go though relative researher quackly, play an impor6tant role in improving user searching experimence, while more importantly, is can help to accurate dismi the valuable biomedical findings.
     Improved literature search engines can save researchers time and effort by making it easier to locate the most important and relevant literature. \cite{2006Text}
@@ -52,6 +53,7 @@
     significence:
     Fig * shows the similar article recommendation functionality, this function is very helpful for biomedical scholar, as a recent works by NLM/NCBI team suggest user needs can be largely improved while users explore related articles.
     can power PubMed user experience,...
+    recommnedation papers in digital library, such as Google Scholar, Scopus, Elverse, PubMed, ...
 
     Why similar article recommendation is very important for further improveing search exerperience, why it is a necessary functionality?
     Related works: how PubMed improving use searching experience. To improving user searching experience, NCBI has provided many in place measurements from serverl aspects.
@@ -106,6 +108,10 @@
     Specifically, BioBert, SciBert and ... are introducted  for comparsion. Since these models are pre-trained on a vast scientific-text corpus for general tasks. it may not achieve perfect performance on the specific task. Therefore,
     in order to obtain better results, we fine-tune these models and evlauate the original models and the fine tuned models seperatly.
 
+    \subsection{Model setup}
+    Due to the average length of citation abstract id 191, and most of (\%80~) paper have an article length above 250, we thus use max sequence length of 300. Note that for another implementation of Bert like model, which jointly the query and condidate as single input,
+    we eliminate using it as it exceeds the max input limitation (510 tokens) of bert model.
+
 
 
     \subsection{dataset}
@@ -153,7 +159,9 @@
 
     \section{Results}
     \subsubsection{Dataset}
-
+    TREC 2005 genomic data: Relevance judgments were made by assessors with backgrounds in biology using a threepoint scale of definitely relevant, probably relevant, and not relevant. Both definitely relevant and probably
+    relevant were considered relevant when computing evaluation scores. The ad hoc retrieval task modeled the situation of a user with an information need using an
+    information retrieval system to access the biomedical scientific literature.\cite{Overview of TREC 2005; TREC 2005 Genomics Track Overview }.
 
     \subsubsection{Competing methods}
     As discussed in relative words section, there are many methods in NLP for text similarity. For evlauation, we introduce Bert, .... For comparsion, we introduction the recommendation result shown in PUbMed interface (see "Simialr article" in page navigation of a particular paper)

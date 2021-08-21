@@ -1,0 +1,3 @@
+[submodule "code/src/other_related_works/XPRC"]
+	path = code/src/other_related_works/XPRC
+	url = https://github.com/w2wei/XPRC.git

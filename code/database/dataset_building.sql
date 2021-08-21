@@ -1,3 +1,355 @@
+-- ######################################### Note RELISH V1 Evaluation Dataset #########################################
+-- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/evaluation-datasets/RELISH_v1.tsv | clickhouse-client --query='INSERT INTO sp.eval_data_relish_v1 FORMAT TSVWithNames' --port=9001 --password=root
+-- drop table sp.eval_data_relish_v1;
+create table if not exists sp.eval_data_relish_v1
+(
+    uid          String,
+    pm_id        String,
+    experience   String,
+    is_anonymous String,
+    relevant     Array(String),
+    partial      Array(String),
+    irrelevant   Array(String)
+) ENGINE = Log;
+
+
+-- 3278 Note test duplicates
+select count(), count(distinct uid), count(distinct pm_id)
+from sp.eval_data_relish_v1
+union all
+select count(), count(distinct uid), count(distinct pm_id)
+from sp.eval_data_relish_v1 any
+         inner join (select pm_id
+                     from sp.eval_data_relish_v1
+                     group by pm_id
+                     having count() == 1) using pm_id;
+
+-- Note test the bad cases, note eliminate them from analysis
+select count()
+from (
+      select count() as cnt
+      from sp.eval_data_relish_v1
+      group by pm_id
+      having cnt != 1
+      order by cnt desc)
+union all
+select count()
+from sp.eval_data_relish_v1
+where length(arrayConcat(relevant, partial, irrelevant)) != arrayUniq(arrayConcat(relevant, partial, irrelevant))
+;
+
+
+-- 0 Note test convert string to UInt64
+select count()
+from sp.eval_data_relish_v1
+where arrayMap(x->toString(toUInt64(x)), relevant) != relevant
+   or arrayMap(x->toString(toUInt64(x)), partial) != partial
+   or arrayMap(x->toString(toUInt64(x)), irrelevant) != irrelevant
+;
+
+select sum(length(relevant)) as num_relevant,
+       sum(length(partial)) as num_partial,
+       sum(length(irrelevant)) as num_irrelevant
+from sp.eval_data_relish_v1;
+
+-- drop table sp.eval_data_relish_v1_with_content;
+-- finished in 6.5 minutes
+create table if not exists sp.eval_data_relish_v1_with_content
+    ENGINE = MergeTree order by q_pm_id as
+select any(q_id)                                     as q_id, -- q_pm_id and q_id is 1 to 1
+       q_pm_id,
+       any(q_clean_content)                          as q_content,
+       groupArray((c_pm_id, c_clean_content, score)) as c_tuples,
+       any(other_metadata)                           as other_metadata
+from (
+         select q_id, q_pm_id, c_pm_id, score, q_clean_content, other_metadata
+         from (
+                  select uid                        as q_id,
+                         toUInt64(pm_id)            as q_pm_id,
+                         (arrayJoin(arrayFilter(
+                                 x->x[2] != q_pm_id,
+                                 arrayConcat(arrayMap(x->
+                                                          [2, toUInt64(x)], relevant),
+                                             arrayMap(x->
+                                                          [1, toUInt64(x)], partial),
+                                             arrayMap(x->
+                                                          [0, toUInt64(x)], irrelevant))))
+                             as item)[2]            as c_pm_id,
+                         item[1]                    as score,
+                         [experience, is_anonymous] as other_metadata
+                  from (select *
+                        from sp.eval_data_relish_v1 any
+                                 inner join (select pm_id, count() as cnt
+                                             from sp.eval_data_relish_v1
+                                             group by pm_id
+                                             having cnt = 1) using pm_id
+                           )
+                  order by uid asc, q_pm_id asc, score desc) any
+                  inner join (select pm_id                                                            as q_pm_id,
+                                     [clean_title, clean_abstract, clean_mesh_headings, datetime_str] as q_clean_content
+                              from fp.paper_clean_content any
+                                       inner join (
+                                  select arrayJoin(
+                                                 arrayDistinct(arrayFlatten(groupArray(arrayMap(x->toUInt64(x),
+                                                                                                arrayConcat(relevant,
+                                                                                                            partial,
+                                                                                                            irrelevant,
+                                                                                                            [sp.eval_data_relish_v1.pm_id])))))
+                                             ) as pm_id
+                                  from sp.eval_data_relish_v1) using pm_id) using q_pm_id) any
+         inner join (select pm_id                                                            as c_pm_id,
+                            [clean_title, clean_abstract, clean_mesh_headings, datetime_str] as c_clean_content
+                     from fp.paper_clean_content any
+                              inner join (
+                         select arrayJoin(
+                                        arrayDistinct(arrayFlatten(groupArray(arrayMap(x->toUInt64(x),
+                                                                                       arrayConcat(relevant,
+                                                                                                   partial,
+                                                                                                   irrelevant,
+                                                                                                   [sp.eval_data_relish_v1.pm_id])))))
+                                    ) as pm_id
+                         from sp.eval_data_relish_v1) using pm_id) using c_pm_id
+group by q_pm_id
+;
+
+-- Note test the number of missing samples
+-- 196680	original_data_instances
+-- 186960	filtered_duplicates_data_instances
+-- 186925	filtered_duplicates_unmatched_data_instances
+select sum(length(partial) + length(relevant) + length(irrelevant)) as cnt, 'original_data_instances' as desc
+from sp.eval_data_relish_v1
+union all
+select sum(length(partial) + length(relevant) + length(irrelevant)) as cnt,
+       'filtered_duplicates_data_instances'                         as desc
+from sp.eval_data_relish_v1 any
+         inner join (select pm_id, count() as cnt
+                     from sp.eval_data_relish_v1
+                     group by pm_id
+                     having cnt = 1) using pm_id
+union all
+select sum(length(c_tuples)) as cnt, 'filtered_duplicates_unmatched_data_instances' as desc
+from sp.eval_data_relish_v1_with_content;
+
+-- ######################################### Note TREC-2005 Genomic data #########################################
+-- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/evaluation-datasets/trec-gen/data/2005/genomics.qrels.large.txt | clickhouse-client --query='INSERT INTO sp.eval_data_trec_genomic_2005 FORMAT TSV' --port=9001 --password=root
+-- drop table sp.eval_data_trec_genomic_2005;
+-- genomics.qrels.large.txt - file of all relevance judgments done, with "0" indicating not relevant, "1" possibly relevant, and "2" definitely relevant
+
+-- This file contains the topics for the ad hoc retrieval task of the TREC 2005 Genomics Track.
+-- There are a total of 50 topics, numbered from 100 to 149.
+-- The topics all generally follow a semantic template, with 10 in each of the 5 templates.
+-- 100-109 Information describing standard methods or protocols for doing some sort of experiment or procedure.
+-- 110-119 Information describing the role(s) of a gene involved in a disease.
+-- 120-129 Information describing the role of a gene in a specific biological process.
+-- 130-139 Information describing interactions (e.g., promote, suppress, inhibit, etc.) between two or more genes in the function of an organ or in a disease.
+-- 140-149 Information describing one or more mutations of a given gene and its biological impact or role.
+create table if not exists sp.eval_data_trec_genomic_2005
+(
+    topic_id         UInt32,
+    no_meaning_field String,
+    pm_id            String,
+    relevant_level   UInt32
+) ENGINE = Log;
+
+-- 39958 /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/evaluation-datasets/trec-gen/data/2005/genomics.qrels.large.txt
+-- 39958
+select count()
+from sp.eval_data_trec_genomic_2005;
+
+-- 4584	4491
+select count(), count(distinct pm_id)
+from sp.eval_data_trec_genomic_2005
+where relevant_level in (1, 2);
+
+-- Note show the relevant score distribution: definitely, possibly, or not relevant
+select topic_id,
+       length(tmp)                                             as pool_size,
+       arrayCount(x->x = 2, groupArray(relevant_level) as tmp) as num_relevant,
+       arrayCount(x->x = 1, groupArray(relevant_level) as tmp) as num_partial,
+       arrayCount(x->x = 0, groupArray(relevant_level) as tmp) as num_irrelevant
+from sp.eval_data_trec_genomic_2005
+group by topic_id
+order by topic_id;
+;
+
+-- drop table sp.eval_data_trec_genomic_2005_with_content;
+create table if not exists sp.eval_data_trec_genomic_2005_with_content
+    ENGINE = MergeTree order by q_pm_id as
+select any(q_id)                                     as q_id,
+       q_pm_id,
+       any(q_clean_content)                          as q_content,
+       groupArray((c_pm_id, c_clean_content, score)) as c_tuples,
+       any(other_metadata)                           as other_metadata
+from (
+--          select qid, q_pm_id, c_pm_id, score, q_clean_content, other_metadata
+         select q_id,
+                q_pm_id,
+                tupleElement(arrayJoin(c_pm_id_score_arr) as item, 1) as c_pm_id,
+                tupleElement(item, 2)                                 as score,
+                q_clean_content,
+                other_metadata
+         from (
+                  with ['within-topic', 'cross-topic'][1] as which_strategy_used_for_making_ranking_pool,
+                      (select arraySort(arrayFilter(x-> x > 0, groupUniqArray(toUInt64(pm_id))))
+                       from sp.eval_data_trec_genomic_2005
+                       where relevant_level in (1, 2)) as corss_topic_ranking_pool
+                  select concat(toString(topic_id), '_', toString(q_pm_id))                                        as q_id,
+                         arrayReverseSort(x->
+                                              x.2,
+                                          groupArray((toUInt64(pm_id), relevant_level)))                           as pm_id_topical_relevant_scores,
+                         tupleElement(arrayJoin(arrayFilter(x->x.2 in (1, 2), pm_id_topical_relevant_scores)) as item,
+                                      1)                                                                           as q_pm_id,
+                         tupleElement(item, 2)                                                                     as q_pm_id_topical_relevant_score,
+                         arrayFilter(y->tupleElement(y, 1) != q_pm_id,
+                                     which_strategy_used_for_making_ranking_pool == 'cross-topic' ? arrayMap(
+                                             x-> (x,
+                                                  if(length(arrayFilter(y->y.1 = x,
+                                                                        pm_id_topical_relevant_scores) as tmp) = 1,
+                                                     tmp[1].2, 0)),
+                                             corss_topic_ranking_pool) :
+                                                                                    pm_id_topical_relevant_scores) as c_pm_id_score_arr,
+                         [toString(topic_id), toString(q_pm_id_topical_relevant_score)]                            as other_metadata
+                  from sp.eval_data_trec_genomic_2005
+                  where relevant_level in (0, 1, 2)
+                  group by topic_id) any
+                  inner join (select pm_id                                                            as q_pm_id,
+                                     [clean_title, clean_abstract, clean_mesh_headings, datetime_str] as q_clean_content
+                              from fp.paper_clean_content any
+                                       inner join(
+                                  select arrayJoin(groupUniqArray(toUInt64(pm_id))) as pm_id
+                                  from sp.eval_data_trec_genomic_2005)
+                                                 using pm_id) using q_pm_id) any
+         inner join (select pm_id                                                            as c_pm_id,
+                            [clean_title, clean_abstract, clean_mesh_headings, datetime_str] as c_clean_content
+                     from fp.paper_clean_content any
+                              inner join (select arrayJoin(groupUniqArray(toUInt64(pm_id))) as pm_id
+                                          from sp.eval_data_trec_genomic_2005) using pm_id) using c_pm_id
+group by q_pm_id
+;
+
+-- Note test the number of missing samples
+-- 4490	filtered_unmatched_data_instances
+-- 4584	original_data_instances
+select count(), 'original_data_instances' as desc
+from sp.eval_data_trec_genomic_2005
+where relevant_level in (1, 2)
+union all
+select count(), 'filtered_unmatched_data_instances' as desc
+from sp.eval_data_trec_genomic_2005_with_content;
+
+-- ######################################### Note TREC-2014 CDS data #########################################
+-- cat /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/evaluation-datasets/trec-cds/qrels-treceval-2014.txt | clickhouse-client --query='INSERT INTO sp.eval_data_trec_cds_2014 FORMAT TSV' --port=9001 --password=root
+-- drop table sp.eval_data_trec_cds_2014;
+create table if not exists sp.eval_data_trec_cds_2014
+(
+    topic_id         UInt32,
+    no_meaning_field String,
+    pm_id            String,
+    relevant_level   UInt32
+) ENGINE = Log;
+
+-- 37949 /home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/evaluation-datasets/trec-cds/qrels-treceval-2014.txt
+-- 37949
+select count()
+from sp.eval_data_trec_cds_2014;
+
+-- 3356	3271
+select count(), count(distinct pm_id)
+from sp.eval_data_trec_cds_2014
+where relevant_level in (1, 2);
+
+-- Note show the relevant score distribution: definitely, possibly, or not relevant
+select topic_id,
+       length(tmp)                                             as pool_size,
+       arrayCount(x->x = 2, groupArray(relevant_level) as tmp) as num_relevant,
+       arrayCount(x->x = 1, groupArray(relevant_level) as tmp) as num_partial,
+       arrayCount(x->x = 0, groupArray(relevant_level) as tmp) as num_irrelevant
+from sp.eval_data_trec_cds_2014
+group by topic_id
+order by topic_id;
+;
+
+-- drop table sp.eval_data_trec_cds_2014_with_content;
+-- finished in 4.5 minutes
+create table if not exists sp.eval_data_trec_cds_2014_with_content
+    ENGINE = MergeTree order by q_pm_id as
+select any(q_id)                                     as q_id,
+       q_pm_id,
+       any(q_clean_content)                          as q_content,
+       groupArray((c_pm_id, c_clean_content, score)) as c_tuples,
+       any(other_metadata)                           as other_metadata
+from (
+--          select qid, q_pm_id, c_pm_id, score, q_clean_content, other_metadata
+         select q_id,
+                q_pm_id,
+                tupleElement(arrayJoin(c_pm_id_score_arr) as item, 1) as c_pm_id,
+                tupleElement(item, 2)                                 as score,
+                q_clean_content,
+                other_metadata
+         from (
+                  with ['within-topic', 'cross-topic'][1] as which_strategy_used_for_making_ranking_pool,
+                      (select arraySort(arrayFilter(x-> x > 0, groupUniqArray(toUInt64(pm_id))))
+                       from sp.eval_data_trec_cds_2014
+                       where relevant_level in (1, 2)) as corss_topic_ranking_pool
+                  select concat(toString(topic_id), '_', toString(q_pm_id))                                        as q_id,
+                         arrayReverseSort(x->
+                                              x.2,
+                                          groupArray((toUInt64(pm_id), relevant_level)))                           as pm_id_topical_relevant_scores,
+                         tupleElement(arrayJoin(arrayFilter(x->x.2 in (1, 2), pm_id_topical_relevant_scores)) as item,
+                                      1)                                                                           as q_pm_id,
+                         tupleElement(item, 2)                                                                     as q_pm_id_topical_relevant_score,
+
+                         arrayFilter(y->tupleElement(y, 1) != q_pm_id,
+                                     which_strategy_used_for_making_ranking_pool == 'cross-topic' ? arrayMap(
+                                             x-> (x,
+                                                  if(length(arrayFilter(y->y.1 = x,
+                                                                        pm_id_topical_relevant_scores) as tmp) = 1,
+                                                     tmp[1].2, 0)),
+                                             corss_topic_ranking_pool) :
+                                                                                    pm_id_topical_relevant_scores) as c_pm_id_score_arr,
+
+                         [toString(topic_id), toString(q_pm_id_topical_relevant_score)]                            as other_metadata
+                  from sp.eval_data_trec_cds_2014
+                  where relevant_level in (0, 1, 2)
+                  group by topic_id) any
+                  inner join (select pm_id                                                            as q_pm_id,
+                                     [clean_title, clean_abstract, clean_mesh_headings, datetime_str] as q_clean_content
+                              from fp.paper_clean_content any
+                                       inner join(
+                                  select arrayJoin(groupUniqArray(toUInt64(pm_id))) as pm_id
+                                  from sp.eval_data_trec_cds_2014)
+                                                 using pm_id) using q_pm_id) any
+         inner join (select pm_id                                                            as c_pm_id,
+                            [clean_title, clean_abstract, clean_mesh_headings, datetime_str] as c_clean_content
+                     from fp.paper_clean_content any
+                              inner join (select arrayJoin(groupUniqArray(toUInt64(pm_id))) as pm_id
+                                          from sp.eval_data_trec_cds_2014) using pm_id) using c_pm_id
+group by q_pm_id
+;
+
+-- Note test the number of missing samples
+-- 3271	filtered_unmatched_data_instances
+-- 3356	original_data_instances
+select count(), 'original_data_instances' as desc
+from sp.eval_data_trec_cds_2014
+where relevant_level in (1, 2)
+union all
+select count(), 'filtered_unmatched_data_instances' as desc
+from sp.eval_data_trec_cds_2014_with_content;
+
+select concat(q_content[1], ' ', q_content[2]) as q_content,
+       arrayMap(x->
+                    (tupleElement(x, 1),
+                     concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                     tupleElement(x, 3))
+           , c_tuples)                         as c_tuples
+from sp.eval_data_trec_genomic_2005_with_content;
+select max(length(q_content))
+from sp.eval_data_trec_cds_2014_with_content;
+select max(length(q_content))
+from sp.eval_data_relish_v1_with_content;
+
+
 -- TODO should delete this table when we using faster retrieval algorithm, this table will be replaced by pubmed_randomly_selected_papers_found_similar_paper_potential_ground_truth
 -- 998659 pubmed_paper_found_sample_similar_article.tsv
 -- 998659
@@ -84,11 +436,11 @@ create table if not exists sp.dataset_split
 select *,
        -- the exercise is deterministic as a specific pm_id will have same xxhash32 code.
        multiIf(
-               function != 'dataset', -1, -- -1 as user study
-               (xxHash32(pm_id) % 100 as rand) < 10, 1, -- [0:10) as train
-               rand < 60, -2, -- [10:60) as drop
-               rand < 80, 0, -- [60:80) as test
-               2 -- [80:100) as val
+                   function != 'dataset', -1, -- -1 as user study
+                   (xxHash32(pm_id) % 100 as rand) < 10, 1, -- [0:10) as train
+                   rand < 60, -2, -- [10:60) as drop
+                   rand < 80, 0, -- [60:80) as test
+                   2 -- [80:100) as val
            ) as train1_test0_val2
 from sp.pubmed_randomly_selected_papers_found_similar_paper_potential_ground_truth any
          -- associate function field

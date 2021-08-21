@@ -2,6 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/code/src/other_related_works/XPRC" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/code/src/other_related_works/mscanner" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/code/src/other_related_works/semsim.benchmark" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/others-researches/XPRC" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/others-researches/semsim.benchmark" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/similar-researches/XPRC" vcs="Git" />

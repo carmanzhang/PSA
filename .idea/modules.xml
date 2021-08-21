@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Evlaution-manuscript/Evlaution-manuscript.iml" filepath="$PROJECT_DIR$/Evlaution-manuscript/Evlaution-manuscript.iml" />
-      <module fileurl="file://$PROJECT_DIR$/Review-manuscript/Review-manuscript.iml" filepath="$PROJECT_DIR$/Review-manuscript/Review-manuscript.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../manuscripts/ongoning-works/citation-recommendation-survey/citation-recommendation-survey.iml" filepath="$PROJECT_DIR$/../manuscripts/ongoning-works/citation-recommendation-survey/citation-recommendation-survey.iml" />
       <module fileurl="file://$PROJECT_DIR$/code/code.iml" filepath="$PROJECT_DIR$/code/code.iml" />
       <module fileurl="file://$PROJECT_DIR$/indexer-searcher/indexer-searcher.iml" filepath="$PROJECT_DIR$/indexer-searcher/indexer-searcher.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code/src/other_related_works/mscanner/mscanner.iml" filepath="$PROJECT_DIR$/code/src/other_related_works/mscanner/mscanner.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../manuscripts/ongoning-works/similar-article-recommendation/similar-article-recommendation.iml" filepath="$PROJECT_DIR$/../manuscripts/ongoning-works/similar-article-recommendation/similar-article-recommendation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../manuscripts/ongoning-works/similar-article-recommendation-evaluation/similar-article-recommendation-evaluation.iml" filepath="$PROJECT_DIR$/../manuscripts/ongoning-works/similar-article-recommendation-evaluation/similar-article-recommendation-evaluation.iml" />
     </modules>
   </component>
 </project>

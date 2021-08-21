@@ -8,11 +8,12 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.similarities.BM25Similarity;
-import org.apache.lucene.store.*;
+import org.apache.lucene.store.NIOFSDirectory;
 import pm.entity.SearchResult;
 import pm.utils.DBUtil;
 import pm.utils.JsonUtil;
@@ -27,6 +28,10 @@ import java.util.*;
 public class PaperContentSearcher {
     private static PaperContentSearcher ourInstance = new PaperContentSearcher();
     private static StandardAnalyzer analyzer = new StandardAnalyzer();
+
+    static {
+        BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
+    }
 
     private IndexSearcher searcher = null;
     private String indexPath = "/home/zhangli/ssd-1t/lucene-index/pubmed/pubmed-all-paper-index";
@@ -52,7 +57,6 @@ public class PaperContentSearcher {
 //        FSDirectory fsDirectory = FSDirectory.open(Paths.get(indexPath));
 //        RAMDirectory dir = new RAMDirectory(fsDirectory, IOContext.READ);
 //        IndexReader reader = DirectoryReader.open(dir);
-
         IndexReader reader = DirectoryReader.open(dir);
         IndexSearcher searcher = new IndexSearcher(reader);
         // The default similarity in Lucene and hence also Elasticsearch is however not a pure tf-idf implementation.

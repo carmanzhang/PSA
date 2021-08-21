@@ -13,6 +13,21 @@ class DBConfig:
     db_in_use = 'sp'
 
 
+# Note available datasets for evaluation
+
+# action config
+class AvailableDataset(Enum):
+    RELISHV1 = 'relish_v1'
+    TREC2005 = 'trec_genomic_2005'
+    TREC2014 = 'trec_cds_2014'
+
+    @classmethod
+    def aslist(cls):
+        return [cls.RELISHV1, cls.TREC2005, cls.TREC2014]
+
+
+which_datasets = AvailableDataset.aslist()
+
 # resource config
 src_base_path = os.path.dirname(os.path.abspath(__file__))
 proj_base_path = os.path.abspath(os.path.join(src_base_path, os.pardir))
@@ -20,12 +35,19 @@ proj_base_path = os.path.abspath(os.path.join(src_base_path, os.pardir))
 saved_result_path = os.path.join(src_base_path, 'result')
 # print(proj_base_path)
 res_dir = os.path.join(proj_base_path, 'data')
+model_dir = os.path.join(proj_base_path, 'model')
+eval_data_dir = os.path.join(res_dir, 'evaluation-datasets')
 development_path = os.path.join(res_dir, 'pubmed_similar_paper_development_dataset.pkl')
 saved_model_base_path = os.path.join(res_dir, 'saved_best_models')
 pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embedding.tsv')
 
 
-# model config
+# Note simple model config
+num_lda_topics = 64
+lda_based_path = os.path.join(model_dir, 'lda-model')
+
+# Note model config
+
 class ModelConfig:
     loss = 'COSIN'
     epoch = 12
@@ -138,8 +160,8 @@ models_in_use = pretrained_models
 best_model_used_to_infer_entire_pubmed = ''
 
 # metrics config
-set_list_length = 60
-
+top_n_interval = 5
+set_list_length = 50
 
 # action config
 class Action(Enum):

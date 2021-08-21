@@ -5,7 +5,9 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/similar-researches/mscanner" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/other_related_works/XPRC" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/model" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.6 (conda-py3.6-1)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

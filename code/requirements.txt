@@ -1,3 +1,4 @@
+Cython==3.0.0a8
 sentence-transformers==1.2.0
 numpy
 scipy
@@ -18,3 +19,4 @@ rankereval==0.1.1
 git+git://github.com/AmenRa/rank_eval@eafd6d1f9cf9f0b9b9aa5eaf6ec8acd02f359133#egg=rank_eval
 # add trec_eval
 pytrec_eval==0.5
+git+git://github.com/epfml/sent2vec@f00a1b67f4330e5be99e7cc31ac28df94deed9ac#egg=sent2vec

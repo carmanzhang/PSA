@@ -20,3 +20,9 @@ git+git://github.com/AmenRa/rank_eval@eafd6d1f9cf9f0b9b9aa5eaf6ec8acd02f359133#e
 # add trec_eval
 pytrec_eval==0.5
 git+git://github.com/epfml/sent2vec@f00a1b67f4330e5be99e7cc31ac28df94deed9ac#egg=sent2vec
+git+git://github.com/carmanzhang/sentence2vec@cf308b2000f4af7180e294508c3c0a9044244896#egg=sentence2vec
+fairseq==0.10.2
+fastBPE==0.1.0
+subword-nmt==0.3.7
+sacremoses==0.0.43
+pytorch-skipthoughts==0.4.4

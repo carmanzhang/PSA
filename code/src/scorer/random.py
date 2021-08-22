@@ -1,10 +1,10 @@
 import numpy as np
 from typing import List
 
-from scoler.scorer import Scorer
+from scorer.scorer import SimpleScorer
 
 
-class RandomScorer(Scorer):
+class RandomScorer(SimpleScorer):
     def __init__(self):
         # Note add a method_signature
         super().__init__('random')

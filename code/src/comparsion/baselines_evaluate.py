@@ -3,7 +3,7 @@ from tqdm import tqdm
 from config import which_datasets
 from metric.all_metric import eval_metrics
 from myio.data_reader import DBReader
-from scoler.available_scoler import ScorerMethodProvider
+from scorer.available_scorer import ScorerMethodProvider
 
 
 def run(method, ds):
@@ -47,9 +47,10 @@ def run(method, ds):
 
 if __name__ == '__main__':
     methods = ScorerMethodProvider.methods()
-    for i, ds in enumerate(which_datasets):
-        for j, method in enumerate(methods):
-            if i > 0:
+    for i, method in enumerate(methods):
+        for j, ds in enumerate(which_datasets):
+            if j > 0:
                 break
             run(method, ds)
+        methods[i] = None
 print("*" * 100)

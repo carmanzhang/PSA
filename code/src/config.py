@@ -43,8 +43,16 @@ pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embed
 
 
 # Note simple model config
+
+pretrained_model_path = proj_base_path = os.path.abspath('/home/zhangli/pre-trained-models/')
+glove840b300d_path = os.path.join(pretrained_model_path, 'GloVe/glove.840B.300d.txt')
+fasttextcrawl300d2m_path = os.path.join(pretrained_model_path, 'fastText/crawl-300d-2M.vec')
+infersent_based_path  = os.path.join(pretrained_model_path, 'infersent')
+
 num_lda_topics = 64
-lda_based_path = os.path.join(model_dir, 'lda-model')
+lda_based_path = os.path.join(model_dir, 'lda')
+word2vec_based_path = os.path.join(model_dir, 'word2vec.model')
+doc2vec_based_path = os.path.join(model_dir, 'doc2vec.model')
 
 # Note model config
 

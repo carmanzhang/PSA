@@ -1,10 +1,10 @@
 from gensim.summarization.bm25 import BM25
 from typing import List
 
-from scoler.scorer import Scorer
+from scorer.scorer import SimpleScorer
 
 
-class BM25Scorer(Scorer):
+class BM25Scorer(SimpleScorer):
     def __init__(self):
         # Note add a method_signature
         super().__init__('bm25')

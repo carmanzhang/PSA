@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/similar-researches/mscanner" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/other_related_works/XPRC" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/other_related_works/SNLI-Model" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/data" />
       <excludeFolder url="file://$MODULE_DIR$/model" />
     </content>

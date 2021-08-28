@@ -8,7 +8,10 @@ class BM25Scorer(SimpleScorer):
     def __init__(self):
         # Note add a method_signature
         super().__init__('bm25')
-
+    #     Note
+    #     filter = PorterStemFilter(filter) # transform the token stream as per the Porter stemming algorithm
+    # filter = StopFilter(Version.LUCENE_CURRENT, filter,
+    #                     StopAnalyzer.ENGLISH_STOP_WORDS_SET)
     def score(self, q_content: str, c_contents: List[str]) -> List[float]:
         query = q_content.split()
         tok_corpus = [c_content.split() for c_content in c_contents]

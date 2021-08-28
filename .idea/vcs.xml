@@ -4,6 +4,7 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/other_related_works/SNLI-Model" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/other_related_works/XPRC" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/code/src/other_related_works/bioreader_standalone" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/other_related_works/mscanner" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/other_related_works/semsim.benchmark" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/code/src/others-researches/XPRC" vcs="Git" />

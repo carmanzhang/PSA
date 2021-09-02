@@ -1,26 +1,24 @@
+import numpy as np
 import torch
-from sentence_transformers import models, InputExample
-from sentence_transformers.evaluation import SimilarityFunction
-from sklearn.decomposition import PCA
-from scipy.spatial import distance
-from sentence_transformers import SentenceTransformer, InputExample, losses
+from sentence_transformers import InputExample, losses
+from sentence_transformers import SentencesDataset
 from sentence_transformers import evaluation
 from sentence_transformers import models
-from sklearn import metrics
+from sentence_transformers.evaluation import SimilarityFunction
 from sklearn.decomposition import PCA
 from torch.utils.data import DataLoader
-from metric import all_metric
-import numpy as np
 
+from metric import all_metric
 from model.transformer import PreTrainedModel
 
 
 class ActionProcessor:
     def __init__(self, model_name_or_path, data):
         self.model = PreTrainedModel(name_or_path=model_name_or_path).load()
-        self.df_train = data[0]
-        self.df_val = data[1]
-        self.df_test = data[2]
+        if data:
+            self.df_train = data[0]
+            self.df_val = data[1]
+            self.df_test = data[2]
 
     def reload_model(self, save_model_path):
         """:param
@@ -70,15 +68,25 @@ class ActionProcessor:
         model = self.model
         df_train, df_val = self.df_train, self.df_val
         print(df_train.columns.values)
-        # prepare train data for tuning
-        train_examples = [InputExample(texts=[content1, content2], label=float(label_or_score)) for
-                          i, (content1, content2, label_or_score) in df_train.iterrows()]
-        # Define your train dataset, the dataloader and the train loss
-        train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
+        if model_config.loss == 'COSIN':
+            # prepare train data for tuning
+            train_examples = [InputExample(texts=[content1, content2], label=float(label_or_score)) for
+                              i, (content1, content2, label_or_score) in df_train.iterrows()]
+            # Define your train dataset, the dataloader and the train loss
+            train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
+            loss = losses.CosineSimilarityLoss(model)
+        elif model_config.loss == 'TRIPLET':
+            train_examples = [InputExample(texts=[q_content, c_pos_content, c_neg_content]) for
+                              i, (q_content, c_pos_content, c_neg_content) in df_train.iterrows()]
+
+            train_dataset = SentencesDataset(train_examples, model)
+            train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
+            loss = losses.TripletLoss(model=model)
+
         print('load train/val data')
 
         # TODO try other losses and evaluators
-        loss = losses.CosineSimilarityLoss(model)
+
         # loss = losses.MultipleNegativesRankingLoss
         # loss = losses.TripletLoss
         #
@@ -88,8 +96,8 @@ class ActionProcessor:
         # loss = losses.ContrastiveLoss
 
         # prepare evaluation data
-        evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['content1'].values, df_val['content2'].values,
-                                                            df_val['label_or_score'].values.astype('float'),
+        evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['q_content'].values, df_val['c_content'].values,
+                                                            df_val['score'].values.astype('float'),
                                                             main_similarity=SimilarityFunction.COSINE)
 
         # Tune the model
@@ -101,7 +109,7 @@ class ActionProcessor:
                   evaluation_steps=evaluation_steps,
                   save_best_model=True,
                   output_path=save_model_path,
-                  show_progress_bar=False)
+                  show_progress_bar=True)
 
         # reset the fine-tuned model to attribute
         self.model = model

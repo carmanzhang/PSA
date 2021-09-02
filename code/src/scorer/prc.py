@@ -4,26 +4,40 @@ import numpy as np
 import pickle
 import re
 import string
-from Bio import Entrez
-from gensim.summarization.bm25 import BM25
+from hashlib import sha1
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
-from tqdm import tqdm
+from typing import List
 
 from ParameterSetting import *
-from myio.data_reader import DBReader
+from config import pmra_cached_data_dir
+from scorer.scorer import SimpleScorer
 
-Entrez.email = "granitedewint@gmail.com"
+
+class PMRAScorer(SimpleScorer):
+    def __init__(self):
+        super().__init__('pmra')  # Note pmra is equivalent to prc
+        pass
+
+    def score(self, q_content: str, c_contents: List[str]) -> List[float]:
+        c_contents = [q_content] + c_contents
+        c_pm_ids = [sha1(n.encode('utf-8')).hexdigest() for n in c_contents]
+        q_pm_id = c_pm_ids[0]
+
+        prc = PRC(q_pm_id=q_pm_id, c_pm_ids=c_pm_ids, c_contents=c_contents)
+        scores = prc.run_PRC()
+        assert len(scores) == len(c_contents) - 1
+        return scores
 
 
 class PRC(object):
     '''This class re-rank the BM25 results using Lin and Wilbur's PRC algorithm.'''
 
     def __init__(self, q_pm_id, c_pm_ids, c_contents):
-        self.vocabDir = 'vocab'
-        self.stemmed_corpus_dir = 'stem'
+        self.vocabDir = os.path.join(pmra_cached_data_dir, 'vocab')
+        self.stemmed_corpus_dir = os.path.join(pmra_cached_data_dir, 'stem')
         self.q_pm_id = q_pm_id
         self.pmidList = c_pm_ids
         self.vocab = []
@@ -42,14 +56,14 @@ class PRC(object):
         self.vectorizeText()
         self.buildDocFreq()
         self.calPRCscores()
-        self.cal_PRC_Similarity()
+        return self.cal_PRC_Similarity()
 
     def getVocab(self):
         try:
             self.vocab = pickle.load(open(os.path.join(self.vocabDir, self.q_pm_id), 'rb'))
             self.stemmed_corpus = pickle.load(open(os.path.join(self.stemmed_corpus_dir, str(self.q_pm_id)), 'rb'))
         except Exception as e:
-            print(e)
+            # print(e)
             self.buildVocab()  # including both self.vocab and self.stemmed_corpus
 
     def buildVocab(self):
@@ -77,7 +91,7 @@ class PRC(object):
                     self.vocab += words
             self.stemmed_corpus.append(". ".join(stemmed_text))  # append a stemmed article text
         # save stemmed corpus
-        pickle.dump(self.stemmed_corpus, open(os.path.join(self.stemmed_corpus_dir, str(self.q_pm_id)), "wb"))
+        # pickle.dump(self.stemmed_corpus, open(os.path.join(self.stemmed_corpus_dir, str(self.q_pm_id)), "wb"))
         # remove low frequency tokens and redundant tokens
         tokenDist = Counter(self.vocab)
         lowFreqList = []
@@ -86,7 +100,7 @@ class PRC(object):
                 lowFreqList.append(token)
         self.vocab = list(set(self.vocab) - set(lowFreqList))
         # save vocabulary
-        pickle.dump(self.vocab, open(os.path.join(self.vocabDir, str(self.q_pm_id)), "wb"))
+        # pickle.dump(self.vocab, open(os.path.join(self.vocabDir, str(self.q_pm_id)), "wb"))
 
     def vectorizeText(self):
         '''This function converts every article (title and abstract) into a list of vocabulary count'''
@@ -139,8 +153,11 @@ class PRC(object):
         ## get a ranked similar doc list
         scoreList = self.sim_matrix[0, :].tolist()[0]
         self.prc_rankedHits = [pmid for (score, pmid) in sorted(zip(scoreList, self.pmidList), reverse=True)]
-        if self.prc_rankedHits[0] != self.q_pm_id:
-            print(len(self.prc_rankedHits), self.prc_rankedHits)
+        scoreList_exlcude_query = [score for (score, pmid) in zip(scoreList, self.pmidList) if pmid != self.q_pm_id]
+        return scoreList_exlcude_query
+
+        # if self.prc_rankedHits[0] != self.q_pm_id:
+        #     print(len(self.prc_rankedHits), self.prc_rankedHits)
 
         # ## save results
         # outDir = self.resDir  # os.path.join(self.baseDir,"prc_ranks","PorterStemmer")
@@ -154,40 +171,3 @@ class PRC(object):
         # fout = open(outFile2, "wb")
         # pmidwScore = sorted(zip(scoreList, self.pmidList), reverse=True)
         # pickle.dump(pmidwScore, fout)
-
-
-if __name__ == '__main__':
-    ds_name = 'relish_v1'
-    df = DBReader.tcp_model_cached_read('vdsvfn',
-                                        sql='''select  q_id,
-                                                       concat(q_content[1], ' ', q_content[2]) as q_content,
-                                                       arrayMap(x->
-                                                                    (tupleElement(x, 1),
-                                                                     concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
-                                                                     tupleElement(x, 3))
-                                                           , c_tuples)                         as c_tuples
-                                                from sp.eval_data_%s_with_content order by q_id limit 20;''' % ds_name,
-                                        cached=False)
-    df_test = df
-    # Note there is no need training
-    print('shape test dataframes: ', df_test.shape)
-
-    items = df_test[['q_id', 'q_content', 'c_tuples']].values
-    all_query_ranks = []
-    for item in tqdm(items):
-        q_id, q_content, c_tuples = item
-        # rcm_id, c_content, label
-        rcm_ids = [rcm_id for rcm_id, c_content, label in c_tuples]
-        c_contents = [c_content for rcm_id, c_content, label in c_tuples]
-        orders = [label for rcm_id, c_content, label in c_tuples]
-
-        query = q_content.split()
-        tok_corpus = [c_content.split() for c_content in c_contents]
-        bm25 = BM25(tok_corpus)
-        scores = bm25.get_scores(query)
-
-        similars = zip(tok_corpus, scores)
-
-        # print(query)
-        prc = PRC(q_pm_id=str(q_id), c_pm_ids=[str(n) for n in rcm_ids], c_contents=c_contents)
-        prc.run_PRC()

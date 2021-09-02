@@ -40,6 +40,7 @@ eval_data_dir = os.path.join(res_dir, 'evaluation-datasets')
 development_path = os.path.join(res_dir, 'pubmed_similar_paper_development_dataset.pkl')
 saved_model_base_path = os.path.join(res_dir, 'saved_best_models')
 pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embedding.tsv')
+pmra_cached_data_dir = os.path.join(res_dir, 'pmra-cached-data')
 
 
 # Note simple model config
@@ -57,14 +58,14 @@ doc2vec_based_path = os.path.join(model_dir, 'doc2vec.model')
 # Note model config
 
 class ModelConfig:
-    loss = 'COSIN'
+    loss = ['COSIN', 'TRIPLET'][1]
     epoch = 12
     batch_size = 8
     optimizer_params = {'lr': 2e-5}
-    max_seq_length = 300
+    max_seq_length = 200
     concise_vector_len = 10
-    warmup_steps = 3000
-    evaluation_steps = 5000
+    warmup_steps = 1500
+    evaluation_steps = 3000
 
     @staticmethod
     def from_dict(d: dict):
@@ -163,7 +164,8 @@ for d in os.listdir(saved_model_base_path):
 
 # TODO use which to evaluate
 # models_in_use = saved_tuned_models
-models_in_use = pretrained_models
+# models_in_use = pretrained_models
+models_in_use =  ['allenai-specter']
 
 best_model_used_to_infer_entire_pubmed = ''
 

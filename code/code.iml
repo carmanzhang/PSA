@@ -9,6 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/other_related_works/SNLI-Model" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/data" />
       <excludeFolder url="file://$MODULE_DIR$/model" />
+      <excludeFolder url="file://$MODULE_DIR$/src/result" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.6 (conda-py3.6-1)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

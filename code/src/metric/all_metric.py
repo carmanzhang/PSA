@@ -118,7 +118,8 @@ def report_classification_metrics(positions_scores, need_scale=False, check_leng
             [roc_auc_score(positions, linear_scale(scores) if need_scale else scores) for positions, scores in
              positions_scores])
     except Exception as e:
-        traceback.print_exc()
+        # traceback.print_exc()
+        pass
 
     positions = list(chain.from_iterable([positions for positions, scores in positions_scores]))
     scores = list(chain.from_iterable([scores for positions, scores in positions_scores]))

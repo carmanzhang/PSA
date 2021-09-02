@@ -25,7 +25,7 @@ class CompNGramScorer(SimpleScorer):
         model.load_model(model_path)
         self.model = model
 
-    def score(self, q_content: str, c_contents: List[str]) -> List[float]:
+    def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         if self.model is None:
             self._load_model()
         q_content_emb = self.model.embed_sentence(q_content)

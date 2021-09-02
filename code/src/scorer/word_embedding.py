@@ -36,11 +36,18 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
     def _lazy_read_all_word_vec_dict(self):
         word_embeddings_dict = {}
         if self.use_word_vec_method == 'glove':
-            with open("/home/zhangli/pre-trained-models/glove.6B/glove.6B.%dd.txt" % self.vec_len, 'r') as f:
+            with open("/home/zhangli/pre-trained-models/glove.840B/glove.840B.300d.txt", 'r') as f:
+            # with open("/home/zhangli/pre-trained-models/glove.6B/glove.6B.%dd.txt" % self.vec_len, 'r') as f:
                 for line in tqdm(f):
                     values = line.split()
+                    if len(values) % 100 != 1: # 101, 201, 301, ...
+                        continue
                     word = values[0]
-                    vector = np.asarray(values[1:], "float32")
+                    try:
+                        vector = np.asarray(values[1:], "float32")
+                    except Exception as e:
+                        print(len(values), values)
+                        continue
                     word_embeddings_dict[word] = vector
         elif self.use_word_vec_method == 'fasttext':
             fin = io.open("/home/zhangli/pre-trained-models/wiki-news-300d-1M.vec", 'r', encoding='utf-8', newline='\n',
@@ -76,7 +83,12 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
             c_content_embedding = [self.word_embeddings_dict.get(n) for n in c_content.split(' ') if
                                    n in self.word_embeddings_dict]
             c_content_embedding = self.pooling_word_embedding_to_sentence_embedding(c_content_embedding)
-            score = 1 - distance.cosine(q_content_embedding, c_content_embedding)
+            try:
+                score = 1 - distance.cosine(q_content_embedding, c_content_embedding)
+            except Exception as e:
+                # Note In order to be a fair competitor, we assign random values to the rare cases
+                print('error!', e)
+                score = np.random.random()
             scores.append(score)
         return scores
 

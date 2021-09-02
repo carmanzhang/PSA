@@ -220,16 +220,18 @@ from (
 -- drop table sp.eval_data_relish_v1_with_content;
 create table if not exists sp.eval_data_relish_v1_with_content
     ENGINE = MergeTree order by q_pm_id as
-select any(q_id)                                     as q_id, -- q_pm_id and q_id is 1 to 1
+select any(q_id)                                                                    as q_id, -- q_pm_id and q_id is 1 to 1
        q_pm_id,
-       any(q_clean_content)                          as q_content,
-       groupArray((c_pm_id, c_clean_content, score)) as c_tuples,
-       any(other_metadata)                           as other_metadata
+       any(train1_val2_test0)                                                       as train1_val2_test0,
+       any(q_clean_content)                                                         as q_content,
+       groupArray((c_pm_id, c_clean_content, score, train1_val2_test0_inner_query)) as c_tuples,
+       any(other_metadata)                                                          as other_metadata
 from (
-         select q_id, q_pm_id, c_pm_id, score, q_clean_content, other_metadata
+         select q_id, q_pm_id, train1_val2_test0, c_pm_id, score, q_clean_content, other_metadata
          from (
                   select uid                        as q_id,
                          pm_id                      as q_pm_id,
+                         train1_val2_test0,
                          toString((arrayJoin(arrayFilter(
                                  x->x[2] != toUInt64(q_pm_id),
                                  arrayConcat(arrayMap(x->
@@ -241,7 +243,9 @@ from (
                              as item)[2])           as c_pm_id,
                          item[1]                    as score,
                          [experience, is_anonymous] as other_metadata
-                  from (select *
+                  from (select *,
+                               (xxHash32(uid) % 100 < 80 ? 1 :
+                                                      (xxHash32(concat(uid, 'random string here')) % 100 < 50 ? 2 : 0)) as train1_val2_test0
                         from sp.eval_data_relish_v1 any
                                  inner join (select pm_id, count() as cnt
                                              from sp.eval_data_relish_v1
@@ -253,10 +257,13 @@ from (
                                      [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as q_clean_content
                               from sp.eval_data_related_pubmed_article_clean_metadata) using q_pm_id) any
          inner join (select pm_id                                                                                                  as c_pm_id,
+                            (xxHash32(pm_id) % 100 < 80 ? 1 :
+                                                     (xxHash32(concat(pm_id, 'random string here')) % 100 < 50 ? 2 : 0))           as train1_val2_test0_inner_query,
                             [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as c_clean_content
                      from sp.eval_data_related_pubmed_article_clean_metadata) using c_pm_id
 group by q_pm_id
 ;
+
 
 -- Note test the number of missing samples
 -- 196680	original_data_instances
@@ -280,15 +287,17 @@ from sp.eval_data_relish_v1_with_content;
 -- drop table sp.eval_data_trec_genomic_2005_with_content;
 create table if not exists sp.eval_data_trec_genomic_2005_with_content
     ENGINE = MergeTree order by q_pm_id as
-select any(q_id)                                     as q_id,
+select any(q_id)                                                                    as q_id,
        q_pm_id,
-       any(q_clean_content)                          as q_content,
-       groupArray((c_pm_id, c_clean_content, score)) as c_tuples,
-       any(other_metadata)                           as other_metadata
+       any(train1_val2_test0)                                                       as train1_val2_test0,
+       any(q_clean_content)                                                         as q_content,
+       groupArray((c_pm_id, c_clean_content, score, train1_val2_test0_inner_query)) as c_tuples,
+       any(other_metadata)                                                          as other_metadata
 from (
 --          select qid, q_pm_id, c_pm_id, score, q_clean_content, other_metadata
          select q_id,
                 q_pm_id,
+                train1_val2_test0,
                 tupleElement(arrayJoin(c_pm_id_score_arr) as item, 1) as c_pm_id,
                 tupleElement(item, 2)                                 as score,
                 q_clean_content,
@@ -298,13 +307,15 @@ from (
                       (select arraySort(arrayFilter(x-> length(x) > 0, groupUniqArray(pm_id)))
                        from sp.eval_data_trec_genomic_2005
                        where relevant_level in (1, 2)) as corss_topic_ranking_pool
-                  select concat(toString(topic_id), '_', q_pm_id)                                                  as q_id,
+                  select concat(toString(topic_id) as topic_id_str, '_', q_pm_id)                                                   as q_id,
+                         (xxHash32(topic_id_str) % 100 < 80 ? 1 :
+                                                         (xxHash32(concat(topic_id_str, 'random string here')) % 100 < 50 ? 2 : 0)) as train1_val2_test0,
                          arrayReverseSort(x->
                                               x.2,
-                                          groupArray((pm_id, relevant_level)))                                     as pm_id_topical_relevant_scores,
+                                          groupArray((pm_id, relevant_level)))                                                      as pm_id_topical_relevant_scores,
                          tupleElement(arrayJoin(arrayFilter(x->x.2 in (1, 2), pm_id_topical_relevant_scores)) as item,
-                                      1)                                                                           as q_pm_id,
-                         tupleElement(item, 2)                                                                     as q_pm_id_topical_relevant_score,
+                                      1)                                                                                            as q_pm_id,
+                         tupleElement(item, 2)                                                                                      as q_pm_id_topical_relevant_score,
                          arrayFilter(y->tupleElement(y, 1) != q_pm_id,
                                      which_strategy_used_for_making_ranking_pool == 'cross-topic' ? arrayMap(
                                              x-> (x,
@@ -312,8 +323,8 @@ from (
                                                                         pm_id_topical_relevant_scores) as tmp) = 1,
                                                      tmp[1].2, 0)),
                                              corss_topic_ranking_pool) :
-                                                                                    pm_id_topical_relevant_scores) as c_pm_id_score_arr,
-                         [toString(topic_id), toString(q_pm_id_topical_relevant_score)]                            as other_metadata
+                                                                                    pm_id_topical_relevant_scores)                  as c_pm_id_score_arr,
+                         [toString(topic_id), toString(q_pm_id_topical_relevant_score)]                                             as other_metadata
                   from sp.eval_data_trec_genomic_2005
                   where relevant_level in (0, 1, 2)
                   group by topic_id) any
@@ -321,6 +332,10 @@ from (
                                      [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as q_clean_content
                               from sp.eval_data_related_pubmed_article_clean_metadata) using q_pm_id) any
          inner join (select pm_id                                                                                                  as c_pm_id,
+                            (xxHash32(pm_id) % 100 < 80 ? 1 :
+                                                     (xxHash32(concat(pm_id, 'this is a random string here')) % 100 <
+                                                      50 ? 2 :
+                                                      0))                                                                          as train1_val2_test0_inner_query,
                             [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as c_clean_content
                      from sp.eval_data_related_pubmed_article_clean_metadata) using c_pm_id
 group by q_pm_id
@@ -340,15 +355,17 @@ from sp.eval_data_trec_genomic_2005_with_content;
 -- drop table sp.eval_data_trec_cds_2014_with_content;
 create table if not exists sp.eval_data_trec_cds_2014_with_content
     ENGINE = MergeTree order by q_pm_id as
-select any(q_id)                                     as q_id,
+select any(q_id)                                                                    as q_id,
        q_pm_id,
-       any(q_clean_content)                          as q_content,
-       groupArray((c_pm_id, c_clean_content, score)) as c_tuples,
-       any(other_metadata)                           as other_metadata
+       any(train1_val2_test0)                                                       as train1_val2_test0,
+       any(q_clean_content)                                                         as q_content,
+       groupArray((c_pm_id, c_clean_content, score, train1_val2_test0_inner_query)) as c_tuples,
+       any(other_metadata)                                                          as other_metadata
 from (
 --          select qid, q_pm_id, c_pm_id, score, q_clean_content, other_metadata
          select q_id,
                 q_pm_id,
+                train1_val2_test0,
                 tupleElement(arrayJoin(c_pm_id_score_arr) as item, 1) as c_pm_id,
                 tupleElement(item, 2)                                 as score,
                 q_clean_content,
@@ -358,13 +375,15 @@ from (
                       (select arraySort(arrayFilter(x-> length(x) > 0, groupUniqArray(pm_id)))
                        from sp.eval_data_trec_cds_2014
                        where relevant_level in (1, 2)) as corss_topic_ranking_pool
-                  select concat(toString(topic_id), '_', q_pm_id)                                                  as q_id,
+                  select concat(toString(topic_id) as topic_id_str, '_', q_pm_id)                                                                         as q_id,
+                         (xxHash32(concat(topic_id_str, 'xxxxxxxxxx')) % 100 < 80 ? 1 :
+                                                                               (xxHash32(concat(topic_id_str, 'random string here')) % 100 < 50 ? 2 : 0)) as train1_val2_test0,
                          arrayReverseSort(x->
                                               x.2,
-                                          groupArray((pm_id, relevant_level)))                                     as pm_id_topical_relevant_scores,
+                                          groupArray((pm_id, relevant_level)))                                                                            as pm_id_topical_relevant_scores,
                          tupleElement(arrayJoin(arrayFilter(x->x.2 in (1, 2), pm_id_topical_relevant_scores)) as item,
-                                      1)                                                                           as q_pm_id,
-                         tupleElement(item, 2)                                                                     as q_pm_id_topical_relevant_score,
+                                      1)                                                                                                                  as q_pm_id,
+                         tupleElement(item, 2)                                                                                                            as q_pm_id_topical_relevant_score,
 
                          arrayFilter(y->tupleElement(y, 1) != q_pm_id,
                                      which_strategy_used_for_making_ranking_pool == 'cross-topic' ? arrayMap(
@@ -373,9 +392,9 @@ from (
                                                                         pm_id_topical_relevant_scores) as tmp) = 1,
                                                      tmp[1].2, 0)),
                                              corss_topic_ranking_pool) :
-                                                                                    pm_id_topical_relevant_scores) as c_pm_id_score_arr,
+                                                                                    pm_id_topical_relevant_scores)                                        as c_pm_id_score_arr,
 
-                         [toString(topic_id), toString(q_pm_id_topical_relevant_score)]                            as other_metadata
+                         [toString(topic_id), toString(q_pm_id_topical_relevant_score)]                                                                   as other_metadata
                   from sp.eval_data_trec_cds_2014
                   where relevant_level in (0, 1, 2)
                   group by topic_id) any
@@ -383,6 +402,10 @@ from (
                                      [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as q_clean_content
                               from sp.eval_data_related_pubmed_article_clean_metadata) using q_pm_id) any
          inner join (select pm_id                                                                                                  as c_pm_id,
+                            (xxHash32(pm_id) % 100 < 80 ? 1 :
+                                                     (xxHash32(concat(pm_id, 'this is a random string here')) % 100 <
+                                                      50 ? 2 :
+                                                      0))                                                                          as train1_val2_test0_inner_query,
                             [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as c_clean_content
                      from sp.eval_data_related_pubmed_article_clean_metadata) using c_pm_id
 group by q_pm_id
@@ -403,6 +426,19 @@ from sp.eval_data_trec_cds_2014_with_content;
 select max(length(q_content))
 from sp.eval_data_relish_v1_with_content;
 
+-- ######################################### Note Making Models Adapted Evaluation Dataset #########################################
+select train1_val2_test0, count() as cnt, 'relishv1' as source
+from sp.eval_data_relish_v1_with_content
+group by train1_val2_test0
+union all
+select train1_val2_test0, count() as cnt, 'trec2005' as source
+from sp.eval_data_trec_genomic_2005_with_content
+group by train1_val2_test0
+union all
+select train1_val2_test0, count() as cnt, 'trec2014' as source
+from sp.eval_data_trec_cds_2014_with_content
+group by train1_val2_test0;
+
 -- Title + Abstract + MeSH as the input
 select q_id,
        q_pm_id,
@@ -417,7 +453,7 @@ select q_id,
 from sp.eval_data_relish_v1_with_content;
 
 
-
+-- MeSH and Journal as input
 select q_id,
        arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
                                               splitByChar('|', q_content[3]) as mesh_arr)) as q_mesh_headings,
@@ -435,7 +471,52 @@ select q_id,
 from sp.eval_data_relish_v1_with_content
 where rand() % 100 < 1;
 
+-- Title + Abstract as input, using triplet loss
+select q_id,
+       train1_val2_test0,
+       q_pm_id,
+       q_content,
+       c_pos_pm_id,
+       c_pos_content,
+       c_neg_pm_id,
+       c_neg_content
+from (
+      select q_id,
+             train1_val2_test0,
+             q_pm_id,
+             concat(q_content[1], ' ', q_content[2]) as q_content,
+             tupleElement(arrayJoin(arrayFilter(y->tupleElement(y, 3) in (1, 2) and xxHash32(y) % 100 < 25,
+                                                tmp_arr) as relevant_or_partial_tuples) as pos_item,
+                          1)                         as c_pos_pm_id,
+             tupleElement(pos_item, 2)               as c_pos_content,
+             tupleElement(arrayJoin(
+                                  arrayFilter(y->tupleElement(y, 3) = 0 and xxHash32(y) % 100 < 25,
+                                              arrayMap(x-> (tupleElement(x, 1),
+                                                            concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                                                            tupleElement(x, 3))
+                                                  , c_tuples) as tmp_arr) as irrelevant_tuples) as neg_item,
+                          1)                         as c_neg_pm_id,
+             tupleElement(neg_item, 2)               as c_neg_content
+      from sp.eval_data_relish_v1_with_content
+      where train1_val2_test0 in (1));
 
+select q_id,
+       train1_val2_test0,
+       q_pm_id,
+       q_content,
+       c_tuples
+from (
+      select q_id,
+             train1_val2_test0,
+             q_pm_id,
+             concat(q_content[1], ' ', q_content[2]) as q_content,
+             arrayMap(x->
+                          (tupleElement(x, 1),
+                           concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2], ' ', tupleElement(x, 2)[3]),
+                           tupleElement(x, 3))
+                 , c_tuples)                                            as c_tuples
+      from sp.eval_data_relish_v1_with_content
+      where train1_val2_test0 in (0, 2));
 
 -- TODO should delete this table when we using faster retrieval algorithm, this table will be replaced by pubmed_randomly_selected_papers_found_similar_paper_potential_ground_truth
 -- 998659 pubmed_paper_found_sample_similar_article.tsv

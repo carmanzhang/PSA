@@ -17,7 +17,7 @@ class XPRCScorer(SimpleScorer):
         super().__init__('xprc')
         pass
 
-    def score(self, q_content: str, c_contents: List[str]) -> List[float]:
+    def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         c_contents = [q_content] + c_contents
         c_pm_ids = [sha1(n.encode('utf-8')).hexdigest() for n in c_contents]
         q_pm_id = c_pm_ids[0]

@@ -28,12 +28,12 @@ class ScorerMethodProvider:
             # LDAScorer(num_topics=num_lda_topics, model_based_path=lda_based_path),
             # Doc2vecScorer(model_based_path=doc2vec_based_path),
             # CompNGramScorer(model_name='wiki_unigrams'),
-            CompNGramScorer(model_name='BioSentVec_PubMed_MIMICIII-bigram_d700'),
-            InferSentScorer(model_version=2),
+            # CompNGramScorer(model_name='BioSentVec_PubMed_MIMICIII-bigram_d700'),
+            # InferSentScorer(model_version=2),
             # BiLSTMScorer(model_path='untrained'),
             # BiLSTMScorer(model_path='psa'),  # on this task: PubMed Similar Article
             # BiLSTMScorer(model_path='snli'),
-            # PMRAScorer(),
-            # XPRCScorer(),
-            SBertScorer(model_name_or_path='allenai-specter/tuned_lsTRIPLET-ep12-bs8-lr0.000020-vl10-sl200'),
+            PMRAScorer(),
+            XPRCScorer(),
+            # SBertScorer(model_name_or_path='allenai-specter/tuned_lsTRIPLET-ep12-bs8-lr0.000020-vl10-sl200'),
         ]

@@ -1,6 +1,6 @@
 import os
 
-from config import ModelConfig, AvailableDataset, saved_model_base_path, Action, to_do_what, models_in_use
+from config import ModelConfig, AvailableDataset, saved_model_base_path, Action, to_do_what, models_in_use, cached_dir
 from model.action_processing import ActionProcessor
 from myio.data_reader import DBReader
 
@@ -35,14 +35,14 @@ from (
              tupleElement(pos_neg_item[2], 1)                       as c_neg_pm_id,
              tupleElement(pos_neg_item[2], 2)                       as c_neg_content
       from (with ['relish_v1', 'trec_genomic_2005', 'trec_cds_2014'] as available_datasets,
-                [1, 0.05, 0.04] as sampling_factors,
+                [7, 0.07, 0.07] as sampling_factors,
                 indexOf(available_datasets, '%s') as dataset_idx,
                 sampling_factors[dataset_idx] as dataset_sampling_factor
             select q_id,
                    train1_val2_test0,
                    q_pm_id,
                    concat(q_content[1], ' ', q_content[2])                                     as q_content,
-                   arrayFilter(y->tupleElement(y, 3) in (1, 2), arrayMap(x-> (tupleElement(x, 1),
+                   arrayFilter(y->tupleElement(y, 3) in (2), arrayMap(x-> (tupleElement(x, 1),
                                                                               concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
                                                                               tupleElement(x, 3))
                        , c_tuples) as tmp_arr)                                                    pos_arr,
@@ -89,8 +89,12 @@ for ds in available_datasets:
     print(train_data_sql)
     print(val_test_data_sql)
 
-    df_train = DBReader.tcp_model_cached_read("", sql=train_data_sql, cached=False)
-    df_val_test = DBReader.tcp_model_cached_read("", sql=val_test_data_sql, cached=False)
+    df_train = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-train.pkl'),
+                                              sql=train_data_sql,
+                                              cached=True)
+    df_val_test = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-val-test.pkl'),
+                                                 sql=val_test_data_sql,
+                                                 cached=True)
     df_train = df_train[['q_content', 'c_pos_content', 'c_neg_content']]
     df_val = df_val_test[df_val_test['train1_val2_test0'] == 2].explode('c_tuples').reset_index(drop=True)
     df_test = df_val_test[df_val_test['train1_val2_test0'] == 0].explode('c_tuples').reset_index(drop=True)

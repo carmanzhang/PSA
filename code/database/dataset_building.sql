@@ -514,7 +514,7 @@ from (
                           (tupleElement(x, 1),
                            concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2], ' ', tupleElement(x, 2)[3]),
                            tupleElement(x, 3))
-                 , c_tuples)                                            as c_tuples
+                 , c_tuples)                         as c_tuples
       from sp.eval_data_relish_v1_with_content
       where train1_val2_test0 in (0, 2));
 
@@ -725,3 +725,59 @@ select tupleElement(arrayJoin(arrayMap(
         range(20))) as itemx, 1) as prob,
        tupleElement(itemx, 2)    as cnt
 from sp.train_val_set_pairwise_sim_score;
+
+select q_id,
+       train1_val2_test0,
+       q_pm_id,
+       q_content,
+       c_pos_pm_id,
+       c_pos_content,
+       c_neg_pm_id,
+       c_neg_content
+from (
+      select q_id,
+             train1_val2_test0,
+             q_pm_id,
+             q_content,
+             arrayMap(i->
+                          [xxHash32(i, randomPrintableASCII(5)) % num_pos + 1, xxHash32(i, randomPrintableASCII(5)) % num_neg + 1],
+                      range(num_sampled_instances))                 as pos_neg_idx,
+             arrayJoin(arrayFilter(y->length(y[1].1) > 0 and length(y[2].1) > 0,
+                                   arrayDistinct(
+                                           arrayMap(idx->
+                                                        [pos_arr[idx[1]],neg_arr[idx[2]]],
+                                                    pos_neg_idx)))) as pos_neg_item,
+             tupleElement(pos_neg_item[1], 1)                       as c_pos_pm_id,
+             tupleElement(pos_neg_item[1], 2)                       as c_pos_content,
+             tupleElement(pos_neg_item[2], 1)                       as c_neg_pm_id,
+             tupleElement(pos_neg_item[2], 2)                       as c_neg_content
+      from (with ['relish_v1', 'trec_genomic_2005', 'trec_cds_2014'] as available_datasets,
+                [1, 0.05, 0.04] as sampling_factors,
+                indexOf(available_datasets, 'trec_cds_2014') as dataset_idx,
+                sampling_factors[dataset_idx] as dataset_sampling_factor
+            select q_id,
+                   train1_val2_test0,
+                   q_pm_id,
+                   concat(q_content[1], ' ', q_content[2])                                     as q_content,
+                   arrayFilter(y->tupleElement(y, 3) in (1, 2), arrayMap(x-> (tupleElement(x, 1),
+                                                                              concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                                                                              tupleElement(x, 3))
+                       , c_tuples) as tmp_arr)                                                    pos_arr,
+                   arrayFilter(y->tupleElement(y, 3) in (0), tmp_arr)                             neg_arr,
+                   length(pos_arr)                                                             as num_pos,
+                   length(neg_arr)                                                             as num_neg,
+                   toUInt32((num_pos > num_neg ? num_pos : num_neg) * dataset_sampling_factor) as num_sampled_instances
+            from sp.eval_data_trec_cds_2014_with_content
+            where train1_val2_test0 in (1))
+      where num_pos > 0
+        and num_neg > 0
+         );
+
+select sum(num_pos), sum(num_neg), sum(num_pos) / sum(num_neg)
+from (
+      select topic_id,
+             arrayCount(x->x in (1, 2), groupArray(relevant_level)) as num_pos,
+             arrayCount(x->x in (0), groupArray(relevant_level))    as num_neg
+      from sp.eval_data_trec_genomic_2005
+      group by topic_id)
+;

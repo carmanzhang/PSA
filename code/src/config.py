@@ -59,7 +59,7 @@ doc2vec_based_path = os.path.join(model_dir, 'doc2vec.model')
 
 class ModelConfig:
     loss = ['COSIN', 'TRIPLET'][1]
-    epoch = 12
+    epoch = 4
     batch_size = 8
     optimizer_params = {'lr': 2e-5}
     max_seq_length = 200
@@ -165,7 +165,7 @@ for d in os.listdir(saved_model_base_path):
 # TODO use which to evaluate
 # models_in_use = saved_tuned_models
 # models_in_use = pretrained_models
-models_in_use =  ['allenai-specter']
+models_in_use =  ['allenai-specter'] + supply_models
 
 best_model_used_to_infer_entire_pubmed = ''
 

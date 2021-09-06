@@ -51,30 +51,31 @@ class XPRC(PRC):
 
     def getKNNterms(self):
         '''prepare knn terms of the QUERY TEXT VOCABULARY from the trained word2vec model. '''
-        try:
-            if "PorterStemmer" in self.resDir:  # if Word2Vec model was trained on stemmed texts
-                self.knnTermDict = pickle.load(
-                    open(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]), 'rb'))
-            if "Standard" in self.resDir:  # if Word2Vec model was trained on the raw texts
-                self.knnTermDict = pickle.load(
-                    open(os.path.join(self.knntermDir, "knnTermDict_Standard_%s.pkl" % self.pmidList[0]), 'rb'))
-        except:
-            for term in self.vocab:
-                try:
-                    knnTerms = self.model.most_similar(term, topn=5)
-                    knnTerms = [t[0] for t in knnTerms]
-                    self.knnTermDict[term] = knnTerms
-                except:
-                    pass
-            if "PorterStemmer" in self.resDir:  # if Word2Vec model was trained on stemmed texts
-                print(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]))
-                # pickle.dump(self.knnTermDict,
-                #             open(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]),
-                #                  "wb"))
-            if "Standard" in self.resDir:  # if Word2Vec model was trained on the raw texts
-                print(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]))
-                # pickle.dump(self.knnTermDict,
-                #             open(os.path.join(self.knntermDir, "knnTermDict_Standard_%s.pkl" % self.pmidList[0]), "wb"))
+        # try:
+        #     if "PorterStemmer" in self.resDir:  # if Word2Vec model was trained on stemmed texts
+        #         self.knnTermDict = pickle.load(
+        #             open(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]), 'rb'))
+        #     if "Standard" in self.resDir:  # if Word2Vec model was trained on the raw texts
+        #         self.knnTermDict = pickle.load(
+        #             open(os.path.join(self.knntermDir, "knnTermDict_Standard_%s.pkl" % self.pmidList[0]), 'rb'))
+        # except:
+        for term in self.vocab:
+            try:
+                knnTerms = self.model.most_similar(term, topn=5)
+                knnTerms = [t[0] for t in knnTerms]
+                self.knnTermDict[term] = knnTerms
+            except Exception as e:
+                # will raise "word may not in vocabulary" error
+                pass
+            # if "PorterStemmer" in self.resDir:  # if Word2Vec model was trained on stemmed texts
+            #     print(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]))
+            #     pickle.dump(self.knnTermDict,
+            #                 open(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]),
+            #                      "wb"))
+            # if "Standard" in self.resDir:  # if Word2Vec model was trained on the raw texts
+            #     print(os.path.join(self.knntermDir, "knnTermDict_PorterStemmer_%s.pkl" % self.pmidList[0]))
+            #     pickle.dump(self.knnTermDict,
+            #                 open(os.path.join(self.knntermDir, "knnTermDict_Standard_%s.pkl" % self.pmidList[0]), "wb"))
 
     def calMPRCscores(self):
         '''Calculate Modified PRC score matrix'''

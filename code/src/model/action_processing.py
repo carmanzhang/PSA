@@ -109,7 +109,7 @@ class ActionProcessor:
                   evaluation_steps=evaluation_steps,
                   save_best_model=True,
                   output_path=save_model_path,
-                  show_progress_bar=True)
+                  show_progress_bar=False)
 
         # reset the fine-tuned model to attribute
         self.model = model

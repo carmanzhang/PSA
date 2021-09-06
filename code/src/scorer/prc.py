@@ -86,6 +86,7 @@ class PRC(object):
                     words = [word for word in words if
                              len(word) > 1]  # remove single letters and non alphabetic characters
                     words = [word for word in words if re.search('[a-zA-Z]', word)]
+                    # Note TODO stemmer will result in many OOV words
                     words = [porter_stemmer.stem(word) for word in words]  # apply Porter stemmer
                     stemmed_text.append(" ".join(words))
                     self.vocab += words

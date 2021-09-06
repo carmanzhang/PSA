@@ -33,7 +33,7 @@ class ScorerMethodProvider:
             # BiLSTMScorer(model_path='untrained'),
             # BiLSTMScorer(model_path='psa'),  # on this task: PubMed Similar Article
             # BiLSTMScorer(model_path='snli'),
-            PMRAScorer(),
+            # PMRAScorer(),
             XPRCScorer(),
             # SBertScorer(model_name_or_path='allenai-specter/tuned_lsTRIPLET-ep12-bs8-lr0.000020-vl10-sl200'),
         ]

@@ -7,8 +7,9 @@ import numpy as np
 import string
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from tqdm import tqdm
 
+from config import AvailableDataset
 from metric.all_metric import eval_metrics
 from myio.data_reader import DBReader
 
@@ -230,7 +231,7 @@ class FeatureScores(object):
         """
         off = self.base + self.prior
         sc = self.scores
-        return np.array([off + np.sum(sc[featdb[d]]) for d in pmids], np.float32)
+        return np.array([off + np.nansum(sc[featdb[d]]) for d in pmids], np.float32)
 
     def __len__(self):
         """Number of features"""
@@ -266,7 +267,7 @@ class FeatureScores(object):
         # Support scores for bernoulli failures
         s.absent_scores = np.log((1 - s.pfreqs) / (1 - s.nfreqs))
         # Conversion to base score (no terms) and occurrence score
-        s.base = np.sum(s.absent_scores)
+        s.base = np.nansum(s.absent_scores)
         s.scores = s.present_scores - s.absent_scores
 
     def _make_pseudovec(s):
@@ -328,7 +329,6 @@ def FeatureCounts(nfeats, featdb, docids):
     return counts
 
 
-
 # function to test if something is a noun
 def extract_nouns(content: str) -> list:
     is_noun = lambda pos: pos[:2] == 'NN'
@@ -336,48 +336,73 @@ def extract_nouns(content: str) -> list:
     nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos)]
     return nouns
 
-if __name__ == '__main__':
-    # Note 1. prepare the dataset: Abstract
-    ds_name = 'trec_genomic_2005'
-    # ds_name = 'relish_v1'
 
-    #  Note used information: title + absract
-    df = DBReader.tcp_model_cached_read("XXXX",
-                                        '''select q_id,
-       concat(q_content[1], ' ', q_content[2]) as q_content,
-       arrayMap(x->
-                    (tupleElement(x, 1),
-                     concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
-                     tupleElement(x, 3))
-           , c_tuples)                                            as c_tuples
-    from sp.eval_data_%s_with_content where rand()%%100 <1 limit 10;''' % ds_name,
-                                        cached=False)
+sql_template = '''select id,
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as train_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], train_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(train_part))) as train_part,
 
-    featmap = FeatureMapping()
-    featured_articles = {}
-    for i, row in df.iterrows():
-        q_id, q_content, c_tuples = row
-        q_content_nouns = extract_nouns(q_content)
-        if q_id not in featured_articles:
-            featured_articles[q_id] = featmap.update_feature_map(content_nouns=q_content_nouns)
-        for c_id, c_content, score in c_tuples:
-            c_content_nouns = extract_nouns(c_content)
-            featured_articles[c_id] = featmap.update_feature_map(content_nouns=c_content_nouns)
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as val_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], val_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(val_part)))   as val_part,
 
-    # Note 2. mapping article into features, i.e., nouns in Title+Abstract -> ID assigned
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as test_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], test_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(test_part)))  as test_part
+from sp.eval_data_%s_with_content_without_query;'''
 
-    # f = FeatureScores(featmap, pseudocount=None)
-    # f.update(s.pfreqs, s.nfreqs, s.pdocs, s.ndocs)
+available_datasets = AvailableDataset.aslist()
+for ds_name in available_datasets:
+    ds_name = ds_name.value
+    running_desc = 'medlineranker' + '_' + ds_name
+    print(ds_name + '...')
+    #  Note used information: title + abstract
+    sql = sql_template % ds_name
+    print(sql)
+    df = DBReader.tcp_model_cached_read("XXXX", sql=sql, cached=False)
+
     all_query_ranks = []
-    for i, row in df.iterrows():
-        c_tuples = row[-1]
-        q_ids = [row[0]] * len(c_tuples)
-        # c_tuples = np.array(row[-1], dtype=object)
-        # for c_id, c_mesh_headings, c_mesh_qualifiers, c_journal, score in c_tuples:
-        c_ids = [n[0] for n in c_tuples]
-        orders = [n[-1] for n in c_tuples]
-        c_pos_ids = [n[0] for n in c_tuples if n[-1] > 0]
-        c_neg_ids = [n[0] for n in c_tuples if n[-1] == 0]
+    for i, row in tqdm(df.iterrows(), total=df.shape[0]):
+        id, train_data, val_data, test_data = row
+
+        train_id = [n[0] for n in train_data]
+        test_id = [n[0] for n in test_data]
+
+        train_contents = [n[1] for n in train_data]
+        test_contents = [n[1] for n in test_data]
+
+        train_orders = [n[2] for n in train_data]
+        test_orders = [n[2] for n in test_data]
+
+        contents = train_contents + test_contents
+        ids = train_id + test_id
+
+        # Note mapping article into features, i.e., nouns in Title+Abstract -> ID assigned
+        featmap = FeatureMapping()
+        featured_articles = {}
+        for c_id, (title_abstract, c_mesh_headings, c_mesh_qualifiers, c_journal) in zip(ids, contents):
+            c_content_nouns = extract_nouns(title_abstract)
+            featured_articles[c_id] = featmap.update_feature_map(content_nouns=c_content_nouns)
+            # f = FeatureScores(featmap, pseudocount=None)
+            # f.update(s.pfreqs, s.nfreqs, s.pdocs, s.ndocs)
+
+        c_pos_ids = [n for i, n in enumerate(train_id) if train_orders[i] > 0]
+        c_neg_ids = [n for i, n in enumerate(train_id) if train_orders[i] == 0]
 
         # Note Count features from the positive articles
         # Note Count features from the negatives articles
@@ -394,20 +419,11 @@ if __name__ == '__main__':
         # Note Evaluating feature scores from the Positive and Negative counts
         featinfo = FeatureScores(featmap=featmap, pseudocount=None)
         featinfo.update(pos_counts, neg_counts, p_docs, n_docs, prior=None)
-        scores = featinfo.scores_of(featured_articles, c_ids)
+        scores = featinfo.scores_of(featured_articles, test_id)
 
-        print(len(scores), scores)
+        # print(p_docs, n_docs, len(scores), scores)
 
-        query_rank = sorted(zip(q_ids, scores, orders), key=lambda x: x[1], reverse=True)
+        query_rank = sorted(zip(scores, test_orders), key=lambda x: x[0], reverse=True)
         all_query_ranks.append(query_rank)
 
-    eval_metrics(all_query_ranks, 'mscanner')
-
-    # logging.info("Pfreqs (bayes): %s", pp.pformat(f.pfreqs))
-    # logging.info("Nfreqs (bayes): %s", pp.pformat(f.nfreqs))
-    # logging.info("PresScores (bayes): %s", pp.pformat(f.present_scores))
-    # logging.info("AbsScores (bayes): %s", pp.pformat(f.absent_scores))
-    # logging.info("Scores (bayes): %s", pp.pformat(f.scores))
-    # logging.info("Base score (bayes): %f", f.base)
-    # s.assertTrue(np.allclose(
-    #     f.scores, np.array([-0.57054485, 1.85889877, 0.29626582])))
+    eval_metrics(all_query_ranks, running_desc)

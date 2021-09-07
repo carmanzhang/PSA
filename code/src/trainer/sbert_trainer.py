@@ -79,8 +79,8 @@ available_datasets = AvailableDataset.aslist()
 for ds in available_datasets:
     # >>>>> Note Step 0. making the running config <<<<<<
     ds_name = ds.value
-    model_param_spec = ds_name + '-' + model_param_spec
-    print('running config: %s' % model_param_spec)
+    running_config = ds_name + '-' + model_param_spec
+    print('running config: %s' % running_config)
 
     # >>>>> Note Step 1. load dataset <<<<<<
     train_data_sql = train_data_sql_template % (ds_name, ds_name)
@@ -134,7 +134,7 @@ for ds in available_datasets:
                 processor.model.max_seq_length = params.max_seq_length
                 print('updated max_seq_length: ', processor.model.max_seq_length)
                 res = processor.fine_tune(
-                    save_model_path=os.path.join(save_model_dir, 'tuned_' + model_param_spec),
+                    save_model_path=os.path.join(save_model_dir, 'tuned_' + running_config),
                     model_config=params).evaluate()
                 print(res)
                 print()

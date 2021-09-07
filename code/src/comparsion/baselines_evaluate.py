@@ -6,7 +6,7 @@ from myio.data_reader import DBReader
 from scorer.available_scorer import ScorerMethodProvider
 
 
-def run(method, ds):
+def eval_explicit_query(method, ds):
     ds_name = ds.value
     model_name = method.signature
     running_desc = '_'.join([model_name, ds_name])
@@ -38,7 +38,69 @@ def run(method, ds):
         # scores = bm25_score(q_content, c_contents)
 
         assert len(scores) == len(orders)
-        query_rank = sorted(zip(rcm_ids, scores, orders), key=lambda x: x[1], reverse=True)
+        query_rank = sorted(zip(scores, orders), key=lambda x: x[0], reverse=True)
+        all_query_ranks.append(query_rank)
+
+    eval_metrics(all_query_ranks, running_desc)
+    print('current dataset: ', ds.value, 'method: ', model_name)
+
+
+sql_template = '''select id,
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as train_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], train_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(train_part))) as train_part,
+
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as val_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], val_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(val_part)))   as val_part,
+
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as test_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], test_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(test_part)))  as test_part
+from sp.eval_data_%s_with_content_without_query;'''
+
+
+def eval_implicit_query(method, ds):
+    ds_name = ds.value
+    model_name = method.signature
+    running_desc = '_'.join([model_name, ds_name])
+    sql = sql_template % ds_name
+    print(sql)
+    df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
+    df_test = df
+    # Note there is no need training
+    print('shape test dataframes: ', df_test.shape)
+
+    items = df_test[['q_pm_id', 'q_content', 'c_tuples']].values
+    all_query_ranks = []
+    for item in tqdm(items):
+        q_pm_id, q_content, c_tuples = item
+        # rcm_id, c_content, label
+        rcm_ids = [rcm_id for rcm_id, c_content, label in c_tuples]
+        c_contents = [c_content for rcm_id, c_content, label in c_tuples]
+        orders = [label for rcm_id, c_content, label in c_tuples]
+
+        # Note add scorer
+        scores = method.score(q_content, c_contents, q_pm_id, rcm_ids)
+        # scores = bm25_score(q_content, c_contents)
+
+        assert len(scores) == len(orders)
+        query_rank = sorted(zip(scores, orders), key=lambda x: x[0], reverse=True)
         all_query_ranks.append(query_rank)
 
     eval_metrics(all_query_ranks, running_desc)
@@ -51,6 +113,7 @@ if __name__ == '__main__':
         for j, ds in enumerate(which_datasets):
             # if j > 0:
             #     break
-            run(method, ds)
+            eval_explicit_query(method, ds)
+            # eval_implicit_query(method, ds)
         methods[i] = None
 print("*" * 100)

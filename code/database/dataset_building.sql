@@ -760,8 +760,8 @@ from (
                    q_pm_id,
                    concat(q_content[1], ' ', q_content[2])                                     as q_content,
                    arrayFilter(y->tupleElement(y, 3) in (2), arrayMap(x-> (tupleElement(x, 1),
-                                                                              concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
-                                                                              tupleElement(x, 3))
+                                                                           concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                                                                           tupleElement(x, 3))
                        , c_tuples) as tmp_arr)                                                    pos_arr,
                    arrayFilter(y->tupleElement(y, 3) in (0), tmp_arr)                             neg_arr,
                    length(pos_arr)                                                             as num_pos,
@@ -781,3 +781,183 @@ from (
       from sp.eval_data_trec_genomic_2005
       group by topic_id)
 ;
+
+
+-- drop table sp.eval_data_relish_v1_with_content_without_query;
+create table if not exists sp.eval_data_relish_v1_with_content_without_query
+    ENGINE = MergeTree order by id as
+select id,
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 1,
+                                               groupArray((c_pm_id, c_clean_content, score, train1_val2_test0)) as c_tuples) as train_part_tmp),
+           arrayFilter(y->y.3 in (1), train_part_tmp),
+           arrayFilter(y->y.3 in (2), train_part_tmp)
+           ] as train_part,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 2, c_tuples) as val_part_tmp),
+           arrayFilter(y->y.3 in (1), val_part_tmp),
+           arrayFilter(y->y.3 in (2), val_part_tmp)
+           ] as val_part,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 0, c_tuples) as test_part_tmp),
+           arrayFilter(y->y.3 in (1), test_part_tmp),
+           arrayFilter(y->y.3 in (2), test_part_tmp)
+           ] as test_part
+from (
+         select uid                        as id,
+                pm_id                      as q_pm_id,
+                toString((arrayJoin(arrayFilter(
+                        x->x[2] != toUInt64(q_pm_id),
+                        arrayConcat(arrayMap(x->
+                                                 [2, toUInt64(x)], relevant),
+                                    arrayMap(x->
+                                                 [1, toUInt64(x)], partial),
+                                    arrayMap(x->
+                                                 [0, toUInt64(x)], irrelevant))))
+                    as item)[2])           as c_pm_id,
+                item[1]                    as score,
+                [experience, is_anonymous] as other_metadata
+         from (select *
+               from sp.eval_data_relish_v1 any
+                        inner join (select pm_id, count() as cnt
+                                    from sp.eval_data_relish_v1
+                                    group by pm_id
+                                    having cnt = 1) using pm_id
+                  )
+         order by uid asc, q_pm_id asc, score desc) any
+         inner join (select pm_id                                                                                                  as c_pm_id,
+                            (xxHash32(pm_id) % 100 < 80 ? 1 :
+                                                     (xxHash32(concat(pm_id, 'random string here')) % 100 < 50 ? 2 : 0))           as train1_val2_test0,
+                            [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as c_clean_content
+                     from sp.eval_data_related_pubmed_article_clean_metadata) using c_pm_id
+group by id;
+
+-- drop table sp.eval_data_trec_cds_2014_with_content_without_query;
+create table if not exists sp.eval_data_trec_cds_2014_with_content_without_query
+    ENGINE = MergeTree order by id as
+select toString(topic_id) as id,
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 1,
+                                               groupArray((pm_id, c_clean_content, relevant_level, train1_val2_test0)) as c_tuples) as train_part_tmp),
+           arrayFilter(y->y.3 in (1), train_part_tmp),
+           arrayFilter(y->y.3 in (2), train_part_tmp)
+           ]              as train_part,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 2, c_tuples) as val_part_tmp),
+           arrayFilter(y->y.3 in (1), val_part_tmp),
+           arrayFilter(y->y.3 in (2), val_part_tmp)
+           ]              as val_part,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 0, c_tuples) as test_part_tmp),
+           arrayFilter(y->y.3 in (1), test_part_tmp),
+           arrayFilter(y->y.3 in (2), test_part_tmp)
+           ]              as test_part
+
+from sp.eval_data_trec_cds_2014 any
+         inner join (select pm_id,
+                            (xxHash32(pm_id) % 100 < 80 ? 1 :
+                                                     (xxHash32(concat(pm_id, 'this is a random string here')) % 100 <
+                                                      50 ? 2 :
+                                                      0))                                                                          as train1_val2_test0,
+                            [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as c_clean_content
+                     from sp.eval_data_related_pubmed_article_clean_metadata) using pm_id
+group by id
+;
+
+-- drop table sp.eval_data_trec_genomic_2005_with_content_without_query;
+create table if not exists sp.eval_data_trec_genomic_2005_with_content_without_query
+    ENGINE = MergeTree order by id as
+select toString(topic_id) as id,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 1,
+                                               groupArray((pm_id, c_clean_content, relevant_level, train1_val2_test0)) as c_tuples) as train_part_tmp),
+           arrayFilter(y->y.3 in (1), train_part_tmp),
+           arrayFilter(y->y.3 in (2), train_part_tmp)
+           ]              as train_part,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 2, c_tuples) as val_part_tmp),
+           arrayFilter(y->y.3 in (1), val_part_tmp),
+           arrayFilter(y->y.3 in (2), val_part_tmp)
+           ]              as val_part,
+
+       [arrayFilter(y->y.3 in (0), arrayFilter(x->x.4 = 0, c_tuples) as test_part_tmp),
+           arrayFilter(y->y.3 in (1), test_part_tmp),
+           arrayFilter(y->y.3 in (2), test_part_tmp)
+           ]              as test_part
+
+from sp.eval_data_trec_genomic_2005 any
+         inner join (select pm_id,
+                            (xxHash32(pm_id) % 100 < 80 ? 1 :
+                                                     (xxHash32(concat(pm_id, 'this is a random string here')) % 100 <
+                                                      50 ? 2 :
+                                                      0))                                                                          as train1_val2_test0,
+                            [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str] as c_clean_content
+                     from sp.eval_data_related_pubmed_article_clean_metadata) using pm_id
+group by id
+;
+
+
+with (select count() from sp.eval_data_relish_v1) as original_cnt
+select count() as cnt, original_cnt, 'relish_v1' as source
+from sp.eval_data_relish_v1_with_content_without_query
+union all
+with (select count(distinct topic_id) from sp.eval_data_trec_cds_2014) as original_cnt
+select count() as cnt, original_cnt, 'trec_cds_2014' as source
+from sp.eval_data_trec_cds_2014_with_content_without_query
+union all
+with (select count(distinct topic_id) from sp.eval_data_trec_genomic_2005) as original_cnt
+select count() as cnt, original_cnt, 'trec_genomic_2005' as source
+from sp.eval_data_trec_genomic_2005_with_content_without_query;
+
+-- Note test train/val/test distribution
+select sum(arraySum(x-> length(x), train_part)) as num_train,
+       sum(arraySum(x-> length(x), val_part))   as num_val,
+       sum(arraySum(x-> length(x), test_part))  as num_test,
+       num_train / num_val,
+       num_train / num_test,
+       'relish_v1'                              as source
+from sp.eval_data_relish_v1_with_content_without_query
+union all
+select sum(arraySum(x-> length(x), train_part)) as num_train,
+       sum(arraySum(x-> length(x), val_part))   as num_val,
+       sum(arraySum(x-> length(x), test_part))  as num_test,
+       num_train / num_val,
+       num_train / num_test,
+       'trec_cds_2014'                          as source
+from sp.eval_data_trec_cds_2014_with_content_without_query
+union all
+select sum(arraySum(x-> length(x), train_part)) as num_train,
+       sum(arraySum(x-> length(x), val_part))   as num_val,
+       sum(arraySum(x-> length(x), test_part))  as num_test,
+       num_train / num_val,
+       num_train / num_test,
+       'trec_genomic_2005'                      as source
+from sp.eval_data_trec_genomic_2005_with_content_without_query;
+
+-- [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str]
+select id,
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as train_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], train_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(train_part))) as train_part,
+
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as val_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], val_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(val_part)))   as val_part,
+
+       arrayMap(x-> (tupleElement(x, 1),
+                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
+                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
+                                                             splitByChar('|', tupleElement(x, 2)[3]) as test_mesh_arr)),
+                      arrayDistinct(arrayFilter(n->length(n) > 0,
+                                                arrayMap(m->splitByString('; ', m)[2], test_mesh_arr))),
+                      tupleElement(x, 2)[4]),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(test_part)))  as test_part
+from sp.eval_data_relish_v1_with_content_without_query;

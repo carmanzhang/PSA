@@ -8,16 +8,16 @@ from typing import List
 
 import util_nli as ut
 from model.bilstm import NLINet
-from scorer.scorer import SupervisedScorer
+from scorer.scorer import SimpleScorer
 
 
-class BiLSTMScorer(SupervisedScorer):
+class BiLSTMScorer(SimpleScorer):
     def __init__(self, model_path):
         self.nli_net = None
         self.model_path = model_path
         super().__init__('bilstm')
 
-    def score(self, q_content: str, c_contents: List[str]) -> List[float]:
+    def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         if self.nli_net is None:
             self.parsr_config_load_or_train()
         # query = q_content.split()

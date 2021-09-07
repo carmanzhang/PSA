@@ -961,3 +961,75 @@ select id,
                       tupleElement(x, 2)[4]),
                      tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(test_part)))  as test_part
 from sp.eval_data_relish_v1_with_content_without_query;
+
+-- [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str]
+select id,
+       arrayMap(x-> (tupleElement(x, 1),
+                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(train_part))) as train_part
+from sp.eval_data_relish_v1_with_content_without_query;
+
+
+-- Note dataset for contrastive loss
+-- select count()
+select id,
+       pm_id1,
+       content1,
+       pm_id2,
+       content2,
+       score
+from (with 5 as dataset_balance_ratio
+      select id,
+             arrayFilter(x->x[1] != x[2], arrayDistinct(
+                     arrayMap(i->
+                                  [xxHash32(i, randomPrintableASCII(5)) % num_pos + 1,
+                                      xxHash32(i, 'xxx', randomPrintableASCII(5)) % num_pos + 1, 1],
+                              range(num_sampled_pos_pos_instances))))                    as pos_pos_idx,
+
+             arrayFilter(x->x[1] != x[2], arrayDistinct(
+                     arrayMap(i->
+                                  [xxHash32(i, randomPrintableASCII(5)) % num_neg + 1,
+                                      xxHash32(i, 'yyy', randomPrintableASCII(5)) % num_neg + 1, 0],
+                              range(num_sampled_neg_neg_instances))))                    as neg_neg_idx,
+
+             length(pos_pos_idx) >
+             length(neg_neg_idx) ?
+             arrayConcat(arraySlice(pos_pos_idx, 1, length(neg_neg_idx) * dataset_balance_ratio), neg_neg_idx) :
+             arrayConcat(pos_pos_idx, arraySlice(neg_neg_idx, 1, length(pos_pos_idx) *
+                                                                 dataset_balance_ratio)) as pos_neg_idx,
+
+             arrayJoin(arrayFilter(y->length(y.1.1) > 0 and length(y.2.1) > 0,
+                                   arrayDistinct(
+                                           arrayMap(idx->
+                                                            idx[3] = 1 ?
+                                                                     (pos_arr[idx[1]], pos_arr[idx[2]], 1) :
+                                                                     (neg_arr[idx[1]], neg_arr[idx[2]], 0),
+                                                    pos_neg_idx))))                      as pos_pos_or_neg_neg_pair_item,
+             tupleElement(pos_pos_or_neg_neg_pair_item.1, 1)                             as pm_id1,
+             tupleElement(pos_pos_or_neg_neg_pair_item.1, 2)                             as content1,
+             tupleElement(pos_pos_or_neg_neg_pair_item.2, 1)                             as pm_id2,
+             tupleElement(pos_pos_or_neg_neg_pair_item.2, 2)                             as content2,
+             pos_pos_or_neg_neg_pair_item.3                                              as score
+      from (with ['relish_v1', 'trec_genomic_2005', 'trec_cds_2014'] as available_datasets,
+                [1.5, 12, 10] as sampling_factors,
+                indexOf(available_datasets, 'trec_cds_2014') as dataset_idx,
+                sampling_factors[dataset_idx] as dataset_sampling_factor
+            select id,
+                   -- [irrelevant -> partial -> relevant]
+                   -- [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str]
+                   arrayMap(x-> (tupleElement(x, 1), concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2])),
+                            train_part[3])                        pos_arr,
+                   arrayMap(x-> (tupleElement(x, 1), concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2])),
+                            train_part[1])                        neg_arr,
+                   length(pos_arr)                             as num_pos,
+                   length(neg_arr)                             as num_neg,
+                   toUInt32(num_pos * dataset_sampling_factor) as num_sampled_pos_pos_instances,
+                   toUInt32(num_neg * dataset_sampling_factor) as num_sampled_neg_neg_instances
+--             from sp.eval_data_relish_v1_with_content_without_query
+--             from sp.eval_data_trec_genomic_2005_with_content_without_query
+            from sp.eval_data_trec_cds_2014_with_content_without_query
+            where num_pos > 0
+              and num_neg > 0)
+         )
+where length(pm_id1) > 0
+  and length(pm_id2) > 0;
+

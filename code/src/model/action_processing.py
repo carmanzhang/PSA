@@ -82,10 +82,23 @@ class ActionProcessor:
             train_dataset = SentencesDataset(train_examples, model)
             train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
             loss = losses.TripletLoss(model=model)
+            evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['q_content'].values, df_val['c_content'].values,
+                                                                df_val['score'].values.astype('float'),
+                                                                main_similarity=SimilarityFunction.COSINE)
+        elif model_config.loss == 'CONTRASTIVE':
+            # print('using model_config.loss: %s' % model_config.loss)
+            # Contrastive loss. Expects as input two texts and a label of either 0 or 1.
+            # If the label == 1, then the distance between the two embeddings is reduced.
+            # If the label == 0, then the distance between the embeddings is increased.
+            train_examples = [InputExample(texts=[content1, content2], label=int(score)) for
+                              i, (id, pm_id1, content1, pm_id2, content2, score) in df_train.iterrows()]
 
-        print('load train/val data')
-
-        # TODO try other losses and evaluators
+            train_dataset = SentencesDataset(train_examples, model)
+            train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
+            loss = losses.ContrastiveLoss(model=model)
+            evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['content1'].values, df_val['content2'].values,
+                                                                df_val['score'].values.astype('float'),
+                                                                main_similarity=SimilarityFunction.COSINE)
 
         # loss = losses.MultipleNegativesRankingLoss
         # loss = losses.TripletLoss
@@ -96,9 +109,6 @@ class ActionProcessor:
         # loss = losses.ContrastiveLoss
 
         # prepare evaluation data
-        evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['q_content'].values, df_val['c_content'].values,
-                                                            df_val['score'].values.astype('float'),
-                                                            main_similarity=SimilarityFunction.COSINE)
 
         # Tune the model
         model.fit(train_objectives=[(train_dataloader, loss)],

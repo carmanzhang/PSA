@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 
 class SimpleScorer(ABC):
@@ -11,12 +11,15 @@ class SimpleScorer(ABC):
         pass
 
 
-class SupervisedScorer(SimpleScorer):
+class NoQueryScorer(ABC):
     def __init__(self, signature):
-        self.model = None
-        super().__init__(signature)
-        # self.load_or_train(train_data_df)
+        self.signature = signature
 
-    # @abstractmethod
-    # def load_or_train(self, train_data_df):
-    #     pass
+    @abstractmethod
+    def score(self,
+              train_id: List[str],
+              train_contents: List[str],
+              train_orders: List[int],
+              test_id: List[str],
+              test_contents: List[str]) -> Union[List[float], None]:
+        pass

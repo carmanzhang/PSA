@@ -92,4 +92,5 @@ for eval_dataset, entries in eval_entries.items():
     df = pd.DataFrame(all_metrics, columns=all_metrics_names, index=ranked_eval_methods)
     print(df)
     df.to_csv('../result/eval-result-%s.tsv' % eval_dataset, sep='\t')
-
+    # df.iloc[:, :5].to_markdown(open('../result/eval-result.md', 'a'))
+    df.iloc[:, :5].to_markdown(open('../result/eval-result-%s.md' % eval_dataset, 'w'))

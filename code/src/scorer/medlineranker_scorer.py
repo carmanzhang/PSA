@@ -2,15 +2,14 @@
 
 from __future__ import division
 
+import nltk
 import numpy as np
 import string
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from tqdm import tqdm
+from typing import List
 
-from config import AvailableDataset
-from metric.all_metric import eval_metrics
-from myio.data_reader import DBReader
+from scorer.scorer import NoQueryScorer
 
 stop_words = set(stopwords.words('english'))
 punctuation = set(string.punctuation)
@@ -328,59 +327,20 @@ def FeatureCounts(nfeats, featdb, docids):
     return counts
 
 
-# Note 1. prepare the dataset: MeSH, journal, ...
-sql_template = '''select id,
-       arrayMap(x-> (tupleElement(x, 1),
-                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
-                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
-                                                             splitByChar('|', tupleElement(x, 2)[3]) as train_mesh_arr)),
-                      arrayDistinct(arrayFilter(n->length(n) > 0,
-                                                arrayMap(m->splitByString('; ', m)[2], train_mesh_arr))),
-                      tupleElement(x, 2)[4]),
-                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(train_part))) as train_part,
+# function to test if something is a noun
+def extract_nouns(content: str) -> list:
+    is_noun = lambda pos: pos[:2] == 'NN'
+    tokenized = nltk.word_tokenize(content)
+    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos)]
+    return nouns
 
-       arrayMap(x-> (tupleElement(x, 1),
-                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
-                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
-                                                             splitByChar('|', tupleElement(x, 2)[3]) as val_mesh_arr)),
-                      arrayDistinct(arrayFilter(n->length(n) > 0,
-                                                arrayMap(m->splitByString('; ', m)[2], val_mesh_arr))),
-                      tupleElement(x, 2)[4]),
-                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(val_part)))   as val_part,
 
-       arrayMap(x-> (tupleElement(x, 1),
-                     (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
-                      arrayFilter(y->length(y) > 0, arrayMap(x->splitByString('; ', x)[1],
-                                                             splitByChar('|', tupleElement(x, 2)[3]) as test_mesh_arr)),
-                      arrayDistinct(arrayFilter(n->length(n) > 0,
-                                                arrayMap(m->splitByString('; ', m)[2], test_mesh_arr))),
-                      tupleElement(x, 2)[4]),
-                     tupleElement(x, 3)), arraySort(z->xxHash32(z.1), arrayFlatten(test_part)))  as test_part
-from sp.eval_data_%s_with_content_without_query;'''
+class MedlineRankerScorer(NoQueryScorer):
+    def __init__(self):
+        super().__init__('medlineranker-no-query')
 
-available_datasets = AvailableDataset.aslist()
-for ds_name in available_datasets:
-    ds_name = ds_name.value
-    running_desc = 'mscanner-no-query' + '_' + ds_name
-    print(ds_name + '...')
-    #  Note used information: title + abstract
-    sql = sql_template % ds_name
-    print(sql)
-    df = DBReader.tcp_model_cached_read("XXXX", sql=sql, cached=False)
-
-    all_query_ranks = []
-    for i, row in tqdm(df.iterrows(), total=df.shape[0]):
-        id, train_data, val_data, test_data = row
-
-        train_id = [n[0] for n in train_data]
-        test_id = [n[0] for n in test_data]
-
-        train_contents = [n[1] for n in train_data]
-        test_contents = [n[1] for n in test_data]
-
-        train_orders = [n[2] for n in train_data]
-        test_orders = [n[2] for n in test_data]
-
+    def score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
+              test_contents: List[str]) -> List[float]:
         contents = train_contents + test_contents
         ids = train_id + test_id
 
@@ -388,8 +348,8 @@ for ds_name in available_datasets:
         featmap = FeatureMapping()
         featured_articles = {}
         for c_id, (title_abstract, c_mesh_headings, c_mesh_qualifiers, c_journal) in zip(ids, contents):
-            featured_articles[c_id] = featmap.update_feature_map(mesh=c_mesh_headings, qual=c_mesh_qualifiers,
-                                                                 issn=[c_journal])
+            c_content_nouns = extract_nouns(title_abstract)
+            featured_articles[c_id] = featmap.update_feature_map(content_nouns=c_content_nouns)
             # f = FeatureScores(featmap, pseudocount=None)
             # f.update(s.pfreqs, s.nfreqs, s.pdocs, s.ndocs)
 
@@ -403,20 +363,8 @@ for ds_name in available_datasets:
         pos_counts = FeatureCounts(len(featmap), featured_articles, c_pos_ids)
         neg_counts = FeatureCounts(len(featmap), featured_articles, c_neg_ids)
 
-        # ndocs = 0
-        # for docid, date, features in docs:
-        #     featcounts[features] += 1
-        #     ndocs += 1
-
         # Note Evaluating feature scores from the Positive and Negative counts
         featinfo = FeatureScores(featmap=featmap, pseudocount=None)
         featinfo.update(pos_counts, neg_counts, p_docs, n_docs, prior=None)
-        scores = featinfo.scores_of(featured_articles, test_id)
-
-        # print(p_docs, n_docs, len(scores), scores)
-
-        query_rank = sorted(zip(scores, test_orders), key=lambda x: x[0], reverse=True)
-        if len(query_rank) > 0:
-            all_query_ranks.append(query_rank)
-
-    eval_metrics(all_query_ranks, running_desc)
+        scores = featinfo.scores_of(featured_articles, test_id).tolist()
+        return scores

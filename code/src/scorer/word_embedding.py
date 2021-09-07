@@ -70,7 +70,7 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
 
         self.word_embeddings_dict = word_embeddings_dict
 
-    def score(self, q_content: str, c_contents: List[str]) -> List[float]:
+    def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         if self.use_word_vec_method == 'biowordvec':
             return self.biosent_vec(q_content, c_contents)
         if self.word_embeddings_dict is None:

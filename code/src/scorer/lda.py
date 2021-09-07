@@ -24,7 +24,7 @@ class LDAScorer(SimpleScorer):
         super().__init__('lda')
 
     # TODO infer the topic for test set
-    def score(self, q_content: str, c_contents: List[str]) -> List[float]:
+    def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         if self.dictionary is None or self.lda is None:
             self._load_or_train_lda()
         q_content_bow = [self.dictionary.doc2bow([m for m in q_content.split() if len(m) > 0])]

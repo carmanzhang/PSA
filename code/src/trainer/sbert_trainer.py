@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("..")
+
 import os
 
 from config import ModelConfig, AvailableDataset, saved_model_base_path, Action, to_do_what, models_in_use, cached_dir

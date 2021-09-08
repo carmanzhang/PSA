@@ -1,6 +1,7 @@
 from collections import Counter
 
 import numpy as np
+import os
 import pickle
 import re
 import string
@@ -11,7 +12,6 @@ from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 from typing import List
 
-from ParameterSetting import *
 from config import pmra_cached_data_dir
 from scorer.scorer import SimpleScorer
 

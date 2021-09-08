@@ -5,6 +5,7 @@ Glove BOW
 BioWordVec BOW
 Note GloVe Positional Encoding ?
 '''
+import os
 
 import io
 import numpy as np
@@ -14,6 +15,7 @@ from scipy.spatial import distance
 from tqdm import tqdm
 from typing import List
 
+from config import pretrained_model_path
 from scorer.scorer import SimpleScorer
 
 
@@ -36,8 +38,7 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
     def _lazy_read_all_word_vec_dict(self):
         word_embeddings_dict = {}
         if self.use_word_vec_method == 'glove':
-            with open("/home/zhangli/pre-trained-models/glove.840B/glove.840B.300d.txt", 'r') as f:
-            # with open("/home/zhangli/pre-trained-models/glove.6B/glove.6B.%dd.txt" % self.vec_len, 'r') as f:
+            with open(os.path.join(pretrained_model_path, 'glove.840B/glove.840B.300d.txt'), 'r') as f:
                 for line in tqdm(f):
                     values = line.split()
                     if len(values) % 100 != 1: # 101, 201, 301, ...
@@ -50,7 +51,7 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
                         continue
                     word_embeddings_dict[word] = vector
         elif self.use_word_vec_method == 'fasttext':
-            fin = io.open("/home/zhangli/pre-trained-models/wiki-news-300d-1M.vec", 'r', encoding='utf-8', newline='\n',
+            fin = io.open(os.path.join(pretrained_model_path, 'wiki-news-300d-1M.vec'), 'r', encoding='utf-8', newline='\n',
                           errors='ignore')
             n, d = map(int, fin.readline().split())
             for line in tqdm(fin):
@@ -59,7 +60,7 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
                 word_embeddings_dict[tokens[0]] = vector
         elif self.use_word_vec_method == 'biowordvec':
             # Note Load BioSentVec model
-            model_path = '/home/zhangli/pre-trained-models/BioSentVec/BioSentVec_PubMed_MIMICIII-bigram_d700.bin'
+            model_path = os.path.join(pretrained_model_path, 'BioSentVec/BioSentVec_PubMed_MIMICIII-bigram_d700.bin')
             model = sent2vec.Sent2vecModel()
             try:
                 model.load_model(model_path)

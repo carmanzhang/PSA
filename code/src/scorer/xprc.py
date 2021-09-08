@@ -1,15 +1,15 @@
 import numpy as np
-import pickle
+import os
 from gensim import models
 from hashlib import sha1
 from typing import List
 
-from ParameterSetting import *
+from config import pretrained_model_path
 from scorer.prc import PRC
 from scorer.scorer import SimpleScorer
 
 word2vec_model = models.KeyedVectors.load_word2vec_format(
-    '/home/zhangli/pre-trained-models/BioWordVec/bio_embedding_intrinsic', binary=True)
+    os.path.join(pretrained_model_path, 'BioWordVec/bio_embedding_intrinsic'), binary=True)
 
 
 class XPRCScorer(SimpleScorer):

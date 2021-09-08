@@ -1,0 +1,15 @@
+09-08-14:21	sbert-allenai-specter-trec_genomic_2005-no-query_relish_v1
+{
+    "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
+    "value": "82.52	83.89	93.14	88.27	76.96	82.52	88.22	-100.0"
+}
+----------------------------------------------------------------------------------------------------
+09-08-14:21	sbert-allenai-specter-trec_genomic_2005-no-query_relish_v1
+{
+    "map": "0.8811	0.8948	1.0	nan	nan	nan	nan	nan	nan	nan",
+    "mrr": "0.9049	0.95	1.0	nan	nan	nan	nan	nan	nan	nan",
+    "ndcg": "0.8864	0.8915	0.981	nan	nan	nan	nan	nan	nan	nan",
+    "num_query": "2220	227	2	0	0	0	0	0	0	0",
+    "top_n": "5	10	15	20	25	30	35	40	45	50"
+}
+----------------------------------------------------------------------------------------------------

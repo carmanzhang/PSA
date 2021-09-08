@@ -151,7 +151,7 @@ class ActionProcessor:
         sent_eb1 = [n[1] for n in self.infer(content_list1)]
         sent_eb2 = [n[1] for n in self.infer(content_list2)]
 
-        label_or_score = self.df_test['label_or_score'].values.tolist()
+        label_or_score = self.df_test['score'].values.tolist()
         cosin_sim_scores = all_metric.batch_cosin_sim_score(sent_eb1, sent_eb2)
         # label
         res = all_metric.report_correlation_metrics(cosin_sim_scores, label_or_score)

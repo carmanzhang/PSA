@@ -1,0 +1,15 @@
+09-08-15:37	sbert-allenai-specter-relish_v1-no-query_relish_v1
+{
+    "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
+    "value": "82.95	84.19	93.41	88.56	77.55	82.95	88.48	-100.0"
+}
+----------------------------------------------------------------------------------------------------
+09-08-15:37	sbert-allenai-specter-relish_v1-no-query_relish_v1
+{
+    "map": "0.8872	0.8928	1.0	nan	nan	nan	nan	nan	nan	nan",
+    "mrr": "0.9101	0.9452	1.0	nan	nan	nan	nan	nan	nan	nan",
+    "ndcg": "0.8937	0.8916	0.9581	nan	nan	nan	nan	nan	nan	nan",
+    "num_query": "2220	227	2	0	0	0	0	0	0	0",
+    "top_n": "5	10	15	20	25	30	35	40	45	50"
+}
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,15 @@
+09-08-16:48	sbert-biobert-v1.1-trec_genomic_2005-no-query_relish_v1
+{
+    "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
+    "value": "82.84	84.01	93.51	88.51	77.33	82.84	88.68	-100.0"
+}
+----------------------------------------------------------------------------------------------------
+09-08-16:48	sbert-biobert-v1.1-trec_genomic_2005-no-query_relish_v1
+{
+    "map": "0.8855	0.8956	1.0	nan	nan	nan	nan	nan	nan	nan",
+    "mrr": "0.9089	0.9426	1.0	nan	nan	nan	nan	nan	nan	nan",
+    "ndcg": "0.892	0.9038	0.9817	nan	nan	nan	nan	nan	nan	nan",
+    "num_query": "2220	227	2	0	0	0	0	0	0	0",
+    "top_n": "5	10	15	20	25	30	35	40	45	50"
+}
+----------------------------------------------------------------------------------------------------

@@ -1,7 +1,17 @@
-import os
-
 # database config
 from enum import Enum
+
+import os
+
+# Note device config
+# 0 _CudaDeviceProperties(name='GeForce RTX 3090', major=8, minor=6, total_memory=24268MB, multi_processor_count=82)
+# 1 _CudaDeviceProperties(name='GeForce RTX 3090', major=8, minor=6, total_memory=24268MB, multi_processor_count=82)
+# 2 _CudaDeviceProperties(name='Tesla V100-PCIE-16GB', major=7, minor=0, total_memory=16160MB, multi_processor_count=80)
+# 3 _CudaDeviceProperties(name='GeForce RTX 2080 Ti', major=7, minor=5, total_memory=11019MB, multi_processor_count=68)
+# 4 _CudaDeviceProperties(name='GeForce RTX 2080 Ti', major=7, minor=5, total_memory=11019MB, multi_processor_count=68)
+
+gpu_id = 0
+device = "cuda:%d" % gpu_id
 
 
 class DBConfig:
@@ -43,18 +53,18 @@ saved_model_base_path = os.path.join(res_dir, 'saved_best_models')
 pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embedding.tsv')
 pmra_cached_data_dir = os.path.join(res_dir, 'pmra-cached-data')
 
-
 # Note simple model config
 
 pretrained_model_path = proj_base_path = os.path.abspath('/home/zhangli/pre-trained-models/')
 glove840b300d_path = os.path.join(pretrained_model_path, 'GloVe/glove.840B.300d.txt')
 fasttextcrawl300d2m_path = os.path.join(pretrained_model_path, 'fastText/crawl-300d-2M.vec')
-infersent_based_path  = os.path.join(pretrained_model_path, 'infersent')
+infersent_based_path = os.path.join(pretrained_model_path, 'infersent')
 
 num_lda_topics = 64
 lda_based_path = os.path.join(model_dir, 'lda')
 word2vec_based_path = os.path.join(model_dir, 'word2vec.model')
 doc2vec_based_path = os.path.join(model_dir, 'doc2vec.model')
+
 
 # Note model config
 
@@ -166,13 +176,14 @@ for d in os.listdir(saved_model_base_path):
 # TODO use which to evaluate
 # models_in_use = saved_tuned_models
 # models_in_use = pretrained_models
-models_in_use =  ['allenai-specter'] + supply_models
+models_in_use = ['allenai-specter'] + supply_models
 
 best_model_used_to_infer_entire_pubmed = ''
 
 # metrics config
 top_n_interval = 5
 set_list_length = 50
+
 
 # action config
 class Action(Enum):

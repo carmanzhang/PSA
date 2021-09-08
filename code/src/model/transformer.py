@@ -1,6 +1,8 @@
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import models
 
+from config import device
+
 
 class PreTrainedModel:
     def __init__(self, name_or_path):
@@ -11,11 +13,11 @@ class PreTrainedModel:
         # The number of token is superior or equal to the number of words of an input.
         word_embedding_model = models.Transformer(self.name_or_path)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-        model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+        model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
         return model
 
     def load_sentence_transformer(self):
-        model = SentenceTransformer(self.name_or_path)
+        model = SentenceTransformer(self.name_or_path, device=device)
         return model
 
     def load(self):

@@ -11,6 +11,12 @@
 
 [eval result](code/src/result/eval-result-relish_v1.md)
 
+[eval result](code/src/result/eval-result-relish_v1-no-query.md)
+
 [eval result](code/src/result/eval-result-trec_cds_2014.md)
 
+[eval result](code/src/result/eval-result-trec_cds_2014-no-query.md)
+
 [eval result](code/src/result/eval-result-trec_genomic_2005.md)
+
+[eval result](code/src/result/eval-result-trec_genomic_2005-no-query.md)

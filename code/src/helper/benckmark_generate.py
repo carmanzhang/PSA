@@ -14,12 +14,14 @@ dataset_names = [n.value for n in AvailableDataset.aslist()]
 result_base_dir = '../result'
 eval_entries = []
 for file in os.listdir(result_base_dir):
-    if '.' in file:
+    if '.md' in file or '.tsv' in file:
+        print('skip: %s' % file)
         continue
 
     # a valid result file name should contain a specific dataset name
-    eval_dataset = [1 if n in file else 0 for n in dataset_names]
+    eval_dataset = [1 if file.endswith(n) else 0 for n in dataset_names]
     if sum(eval_dataset) != 1:
+        print('error')
         continue
 
     # Note parse evaluation dataset and method
@@ -90,7 +92,13 @@ for eval_dataset, entries in eval_entries.items():
     all_metrics = np.concatenate((all_ranking_metrics, all_cate_metrics), axis=1)
     print(all_metrics_names.shape, all_metrics.shape)
     df = pd.DataFrame(all_metrics, columns=all_metrics_names, index=ranked_eval_methods)
-    print(df)
-    df.to_csv('../result/eval-result-%s.tsv' % eval_dataset, sep='\t')
+
+    query_bench_df = df.loc[df.index.str.find('no-query') == -1]
+    no_query_bench_df = df.loc[df.index.str.find('no-query') != -1]
+
+    query_bench_df.to_csv('../result/eval-result-%s.tsv' % eval_dataset, sep='\t')
+    query_bench_df.iloc[:, :5].to_markdown(open('../result/eval-result-%s.md' % eval_dataset, 'w'))
+
+    no_query_bench_df.to_csv('../result/eval-result-%s-no-query.tsv' % eval_dataset, sep='\t')
+    no_query_bench_df.iloc[:, :5].to_markdown(open('../result/eval-result-%s-no-query.md' % eval_dataset, 'w'))
     # df.iloc[:, :5].to_markdown(open('../result/eval-result.md', 'a'))
-    df.iloc[:, :5].to_markdown(open('../result/eval-result-%s.md' % eval_dataset, 'w'))

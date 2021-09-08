@@ -1,10 +1,10 @@
-09-07-15:54	medlineranker_relish_v1
+09-08-18:09	medlineranker-no-query_relish_v1
 {
     "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
     "value": "53.38	76.27	49.38	59.95	52.09	53.38	-100.0	-100.0"
 }
 ----------------------------------------------------------------------------------------------------
-09-07-15:54	medlineranker_relish_v1
+09-08-18:09	medlineranker-no-query_relish_v1
 {
     "map": "0.8652	0.8627	1.0	nan	nan	nan	nan	nan	nan	nan",
     "mrr": "0.8885	0.9142	1.0	nan	nan	nan	nan	nan	nan	nan",

@@ -12,7 +12,7 @@ from scorer.medlineranker_scorer import MedlineRankerScorer
 from scorer.mscanner_scorer import MScannerScorer
 from scorer.prc import PMRAScorer
 from scorer.rand import RandomScorer, NoQueryRandomScorer
-from scorer.sbert_scorer import SBertScorer
+from scorer.sbert_scorer import SBertScorer, NoQuerySBertScorer
 from scorer.scorer import SimpleScorer, NoQueryScorer
 from scorer.word_embedding import WordEmbeddingSAVGScorer
 from scorer.xprc import XPRCScorer
@@ -36,12 +36,15 @@ class ScorerMethodProvider:
             # BiLSTMScorer(model_path='snli'),
             PMRAScorer(),
             XPRCScorer(),
+
             SBertScorer(model_name_or_path='allenai-specter/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
             SBertScorer(model_name_or_path='allenai-specter/tuned_trec_cds_2014-lsTRIPLET-ep2-bs16-lr0.000010-vl10-sl200'),
             SBertScorer(model_name_or_path='allenai-specter/tuned_trec_genomic_2005-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
+
             SBertScorer(model_name_or_path='biobert-v1.1/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
             SBertScorer(model_name_or_path='biobert-v1.1/tuned_trec_cds_2014-lsTRIPLET-ep2-bs16-lr0.000010-vl10-sl200'),
             SBertScorer(model_name_or_path='biobert-v1.1/tuned_trec_genomic_2005-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
+
             SBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
             SBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_trec_cds_2014-lsTRIPLET-ep2-bs16-lr0.000010-vl10-sl200'),
             SBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_trec_genomic_2005-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
@@ -49,6 +52,18 @@ class ScorerMethodProvider:
 
     def no_query_methods(self) -> List[NoQueryScorer]:
         return [
+            NoQuerySBertScorer(model_name_or_path='allenai-specter/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='allenai-specter/tuned_no-query-trec_cds_2014-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='allenai-specter/tuned_no-query-trec_genomic_2005-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+
+            NoQuerySBertScorer(model_name_or_path='biobert-v1.1/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='biobert-v1.1/tuned_no-query-trec_cds_2014-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='biobert-v1.1/tuned_no-query-trec_genomic_2005-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+
+            NoQuerySBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_no-query-trec_cds_2014-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_no-query-trec_genomic_2005-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+
             NoQueryRandomScorer(),
             MScannerScorer(),
             MedlineRankerScorer(),

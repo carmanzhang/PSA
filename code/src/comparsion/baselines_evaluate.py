@@ -54,10 +54,10 @@ def eval_no_query_based_method(method, ds_name, df):
 
         scores = method.score(train_id, train_contents, train_orders, test_id, test_contents)
         # print(p_docs, n_docs, len(scores), scores)
-
+        if scores is None or len(scores) == 0:
+            continue
         query_rank = sorted(zip(scores, test_orders), key=lambda x: x[0], reverse=True)
-        if query_rank is not None and len(query_rank) > 0:
-            all_query_ranks.append(query_rank)
+        all_query_ranks.append(query_rank)
 
     eval_metrics(all_query_ranks, running_desc)
     print('current dataset: ', ds.value, 'method: ', model_name)
@@ -103,18 +103,18 @@ no_query_sql_template = '''select id,
 from sp.eval_data_%s_with_content_without_query;'''
 
 if __name__ == '__main__':
-    methods = ScorerMethodProvider().methods()
-    for i, method in enumerate(methods):
-        for j, ds in enumerate(which_datasets):
-            ds_name = ds.value
-            sql = sql_template % ds_name
-            print(sql)
-            df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
-            df_copy = copy.deepcopy(df)
-            # if j > 0:
-            #     break
-            eval_query_based_method(method, ds_name, df_copy)
-        methods[i] = None
+    # methods = ScorerMethodProvider().methods()
+    # for i, method in enumerate(methods):
+    #     for j, ds in enumerate(which_datasets):
+    #         ds_name = ds.value
+    #         sql = sql_template % ds_name
+    #         print(sql)
+    #         df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
+    #         df_copy = copy.deepcopy(df)
+    #         # if j > 0:
+    #         #     break
+    #         eval_query_based_method(method, ds_name, df_copy)
+    #     methods[i] = None
 
     no_query_methods = ScorerMethodProvider().no_query_methods()
     for i, method in enumerate(no_query_methods):

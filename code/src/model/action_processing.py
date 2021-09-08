@@ -135,12 +135,12 @@ class ActionProcessor:
                 row_id, content = i, v
             sent_batch.append([row_id, content])
             if i % infer_batch_size == 0:
-                tmp_eb = self.model.encode([n[1] for n in sent_batch], batch_size=batch_size)
+                tmp_eb = self.model.encode([n[1] for n in sent_batch], batch_size=batch_size, show_progress_bar=False)
                 assert len(tmp_eb) == len(sent_batch)
                 sent_eb.extend([[n[0], tmp_eb[i]] for i, n in enumerate(sent_batch)])
                 sent_batch = []
         if len(sent_batch) > 0:
-            tmp_eb = self.model.encode([n[1] for n in sent_batch], batch_size=batch_size)
+            tmp_eb = self.model.encode([n[1] for n in sent_batch], batch_size=batch_size, show_progress_bar=False)
             assert len(tmp_eb) == len(sent_batch)
             sent_eb.extend([[n[0], tmp_eb[i]] for i, n in enumerate(sent_batch)])
         return sent_eb

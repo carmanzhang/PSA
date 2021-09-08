@@ -60,9 +60,9 @@ doc2vec_based_path = os.path.join(model_dir, 'doc2vec.model')
 
 class ModelConfig:
     loss = ['COSIN', 'TRIPLET', 'CONTRASTIVE'][1]
-    epoch = 4
-    batch_size = 8
-    optimizer_params = {'lr': 2e-5}
+    epoch = 3
+    batch_size = 16
+    optimizer_params = {'lr': 1e-5}
     max_seq_length = 200
     concise_vector_len = 10
     warmup_steps = 1500

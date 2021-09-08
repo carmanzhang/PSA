@@ -1,8 +1,12 @@
+import sys
+
+sys.path.append("..")
 import copy
 
+import os
 from tqdm import tqdm
 
-from config import which_datasets
+from config import which_datasets, cached_dir
 from metric.all_metric import eval_metrics
 from myio.data_reader import DBReader
 from scorer.available_scorer import ScorerMethodProvider
@@ -72,7 +76,6 @@ sql_template = '''select  q_pm_id,
                                                            , c_tuples)                         as c_tuples
                                                 from sp.eval_data_%s_with_content where train1_val2_test0 in (0);'''
 
-
 no_query_sql_template = '''select id,
        arrayMap(x-> (tupleElement(x, 1),
                      (concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2]),
@@ -122,7 +125,9 @@ if __name__ == '__main__':
             ds_name = ds.value
             sql = no_query_sql_template % ds_name
             print(sql)
-            df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
+            df = DBReader.tcp_model_cached_read(os.path.join(cached_dir, '%s-no-query.pkl' % ds_name),
+                                                sql=sql,
+                                                cached=True)
             df_copy = copy.deepcopy(df)
             # if j > 0:
             #     break

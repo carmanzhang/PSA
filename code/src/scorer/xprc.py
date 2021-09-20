@@ -11,6 +11,7 @@ from scorer.scorer import SimpleScorer
 word2vec_model = models.KeyedVectors.load_word2vec_format(
     os.path.join(pretrained_model_path, 'BioWordVec/bio_embedding_intrinsic'), binary=True)
 
+precomputed_topic_similar_words = {}
 
 class XPRCScorer(SimpleScorer):
     def __init__(self):
@@ -31,8 +32,8 @@ class XPRCScorer(SimpleScorer):
 class XPRC(PRC):
     '''This class re-rank the BM25 results using the MPRC algorithm.'''
 
-    def __init__(self, q_pm_id, c_pm_ids, c_contents):
-        super(XPRC, self).__init__(q_pm_id, c_pm_ids, c_contents)
+    def __init__(self, q_pm_id, c_pm_ids, c_contents, stem_word=False):
+        super(XPRC, self).__init__(q_pm_id, c_pm_ids, c_contents, stem_word=stem_word)
         self.knntermDir = 'knn'
         self.model = word2vec_model
         self.knnTermDict = {}
@@ -61,9 +62,13 @@ class XPRC(PRC):
         # except:
         for term in self.vocab:
             try:
-                knnTerms = self.model.most_similar(term, topn=5)
-                knnTerms = [t[0] for t in knnTerms]
-                self.knnTermDict[term] = knnTerms
+                if term in precomputed_topic_similar_words:
+                    self.knnTermDict[term] = precomputed_topic_similar_words[term]
+                else:
+                    knnTerms = self.model.most_similar(term, topn=5)
+                    knnTerms = [t[0] for t in knnTerms]
+                    self.knnTermDict[term] = knnTerms
+                    precomputed_topic_similar_words[term] = knnTerms
             except Exception as e:
                 # will raise "word may not in vocabulary" error
                 pass

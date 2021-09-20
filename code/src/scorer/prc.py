@@ -7,18 +7,18 @@ import re
 import string
 from hashlib import sha1
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 from typing import List
 
 from config import pmra_cached_data_dir
+from helper.word_helper import Stemmer
 from scorer.scorer import SimpleScorer
 
 
 class PMRAScorer(SimpleScorer):
     def __init__(self):
-        super().__init__('pmra')  # Note pmra is equivalent to prc
+        super().__init__('pmra')  # Note pmra is prc
         pass
 
     def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
@@ -35,7 +35,7 @@ class PMRAScorer(SimpleScorer):
 class PRC(object):
     '''This class re-rank the BM25 results using Lin and Wilbur's PRC algorithm.'''
 
-    def __init__(self, q_pm_id, c_pm_ids, c_contents):
+    def __init__(self, q_pm_id, c_pm_ids, c_contents, stem_word=True):
         self.vocabDir = os.path.join(pmra_cached_data_dir, 'vocab')
         self.stemmed_corpus_dir = os.path.join(pmra_cached_data_dir, 'stem')
         self.q_pm_id = q_pm_id
@@ -49,6 +49,8 @@ class PRC(object):
         self.prc_matrix = None  # PRC score matrix
         self.sim_matrix = None  # Similarity score matrix
         self.prc_rankedHits = []
+        self.stem_word = stem_word
+        self.stopwords = set(stopwords.words("english"))
 
     def run_PRC(self):
         '''run the experiment to get PRC top hits'''
@@ -75,22 +77,16 @@ class PRC(object):
         #     #  Note content of this PMID
         #     self.corpus.append(   )  # corpus contains raw text (MH, title*2, abstract)
         for text in self.corpus:
-            sent_tokenize_list = sent_tokenize(text.strip().lower(), "english")  # tokenize an article text
-            stemmed_text = []
-            if sent_tokenize_list:  # if sent_tokenize_list is not empty
-                porter_stemmer = PorterStemmer()
-                for sent in sent_tokenize_list:
-                    words = TreebankWordTokenizer().tokenize(sent)  # tokenize the sentence
-                    words = [word.strip(string.punctuation) for word in words]
-                    words = [word for word in words if not word in stopwords.words("english")]
-                    words = [word for word in words if
-                             len(word) > 1]  # remove single letters and non alphabetic characters
-                    words = [word for word in words if re.search('[a-zA-Z]', word)]
-                    # Note TODO stemmer will result in many OOV words
-                    words = [porter_stemmer.stem(word) for word in words]  # apply Porter stemmer
-                    stemmed_text.append(" ".join(words))
-                    self.vocab += words
-            self.stemmed_corpus.append(". ".join(stemmed_text))  # append a stemmed article text
+            words = text.split(' ')
+            words = [word.strip(string.punctuation) for word in words]
+            words = [word for word in words if not word in self.stopwords]
+            words = [word for word in words if
+                     len(word) > 1]  # remove single letters and non alphabetic characters
+            words = [word for word in words if re.search('[a-zA-Z]', word)]
+            # Note TODO stemmer will result in many OOV words
+            words = [Stemmer.stem(word) if self.stem_word else word for word in words]
+            self.vocab += words
+            self.stemmed_corpus.append(" ".join(words))  # append a stemmed article text
         # save stemmed corpus
         # pickle.dump(self.stemmed_corpus, open(os.path.join(self.stemmed_corpus_dir, str(self.q_pm_id)), "wb"))
         # remove low frequency tokens and redundant tokens

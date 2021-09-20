@@ -12,25 +12,25 @@ from scorer.scorer import SimpleScorer, NoQueryScorer
 
 class SBertScorer(SimpleScorer):
     def __init__(self, model_name_or_path):
-        model_name = model_name_or_path.split('/')[0]
-        super().__init__('sbert-%s' % model_name)
-        self.model_path = os.path.join(saved_model_base_path, model_name_or_path)
+        dataset_names = [n.value for n in AvailableDataset.aslist()]
+        fine_tune_dataset = [1 if n in model_name_or_path else 0 for n in dataset_names]
+        if sum(fine_tune_dataset) == 1:
+            fine_tune_dataset = dataset_names[fine_tune_dataset.index(1)]
+            model_name = model_name_or_path.split('/')[0]
+            model_signature = 'sbert-%s-%s' % (model_name, fine_tune_dataset)
+            model_name_or_path = os.path.join(saved_model_base_path, model_name_or_path)
+        else:
+            model_name = model_name_or_path.split('/')[1]
+            model_signature = 'sbert-%s' % model_name
+
+        super().__init__(model_signature)
+        self.model_path = model_name_or_path
         self.processor = None
-        # df_train = df_train[['q_content', 'c_pos_content', 'c_neg_content']]
-        # df_val = df_val_test[df_val_test['train1_val2_test0'] == 2].explode('c_tuples').reset_index(drop=True)
-        # df_test = df_val_test[df_val_test['train1_val2_test0'] == 0].explode('c_tuples').reset_index(drop=True)
-        #
-        # df_val['c_pm_id'], df_val['c_content'], df_val['score'] = df_val['c_tuples'].apply(lambda x: x[0]), df_val[
-        #     'c_tuples'].apply(lambda x: x[1]), df_val['c_tuples'].apply(lambda x: x[2])
-        # del df_val['c_tuples']
-        # df_test['c_pm_id'], df_test['c_content'], df_test['score'] = df_test['c_tuples'].apply(lambda x: x[0]), df_test[
-        #     'c_tuples'].apply(lambda x: x[1]), df_test['c_tuples'].apply(lambda x: x[2])
-        # del df_test['c_tuples']
-        # print('load train/val/test data', df_train.shape, df_val.shape, df_test.shape)
 
     def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         if self.processor is None:
             self.processor = ActionProcessor(self.model_path, data=None)
+            self.processor.model.max_seq_length = ModelConfig.max_seq_length
             print('max_seq_length: ', self.processor.model.max_seq_length)
         content_list = [q_content] + c_contents
         sent_ebs = [n[1] for n in self.processor.infer(content_list, batch_size=320)]
@@ -69,19 +69,24 @@ class NoQuerySBertScorer(NoQueryScorer):
     def __init__(self, model_name_or_path):
         dataset_names = [n.value for n in AvailableDataset.aslist()]
         fine_tune_dataset = [1 if n in model_name_or_path else 0 for n in dataset_names]
-        assert sum(fine_tune_dataset) == 1
-        fine_tune_dataset = dataset_names[fine_tune_dataset.index(1)]
+        if sum(fine_tune_dataset) == 1:
+            fine_tune_dataset = dataset_names[fine_tune_dataset.index(1)]
+            model_name = model_name_or_path.split('/')[0]
+            model_signature = 'sbert-%s-%s-no-query' % (model_name, fine_tune_dataset)
+            model_name_or_path = os.path.join(saved_model_base_path, model_name_or_path)
+        else:
+            model_name = model_name_or_path.split('/')[1]
+            model_signature = 'sbert-%s-no-query' % model_name
 
-        model_name = model_name_or_path.split('/')[0]
-
-        super().__init__('sbert-%s-%s-no-query' % (model_name, fine_tune_dataset))
-        self.model_path = os.path.join(saved_model_base_path, model_name_or_path)
+        super().__init__(model_signature)
+        self.model_path = model_name_or_path
         self.processor = None
 
     def score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
               test_contents: List[str]) -> Union[List[float], None]:
         if self.processor is None:
             self.processor = ActionProcessor(self.model_path, data=None)
+            self.processor.model.max_seq_length = ModelConfig.max_seq_length
             print('max_seq_length: ', self.processor.model.max_seq_length)
 
         contents = train_contents + test_contents

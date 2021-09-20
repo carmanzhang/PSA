@@ -26,3 +26,6 @@ fastBPE==0.1.0
 subword-nmt==0.3.7
 sacremoses==0.0.43
 pytorch-skipthoughts==0.4.4
+# pip3 install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.0/en_core_web_sm-2.2.0.tar.gz
+spacy==2.2.0
+snowballstemmer==2.1.0

@@ -2,22 +2,15 @@
 
 from __future__ import division
 
-from typing import List
-
 import numpy as np
 import string
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-from tqdm import tqdm
+from typing import List
 
-from config import AvailableDataset
-from metric.all_metric import eval_metrics
-from myio.data_reader import DBReader
 from scorer.scorer import NoQueryScorer
 
 stop_words = set(stopwords.words('english'))
 punctuation = set(string.punctuation)
-ps = PorterStemmer()
 
 
 def update(obj, vars, exclude=['self']):
@@ -330,13 +323,13 @@ def FeatureCounts(nfeats, featdb, docids):
         counts[featdb[docid]] += 1
     return counts
 
+
 class MScannerScorer(NoQueryScorer):
     def __init__(self):
         super().__init__('mscanner-no-query')
 
     def score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
               test_contents: List[str]) -> List[float]:
-
         contents = train_contents + test_contents
         ids = train_id + test_id
 

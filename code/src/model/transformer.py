@@ -32,3 +32,9 @@ class PreTrainedModel:
                 model = self.load_sentence_transformer()
                 print('load_sentence_transformer: %s from local file' % self.name_or_path)
         return model
+
+
+if __name__ == '__main__':
+    PreTrainedModel(name_or_path='allenai-specter').load()
+    PreTrainedModel(name_or_path='dmis-lab/biobert-v1.1').load()
+    PreTrainedModel(name_or_path='allenai/scibert_scivocab_uncased').load()

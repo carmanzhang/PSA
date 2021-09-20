@@ -3,13 +3,11 @@ ElMo BOW
 fastText BOW
 Glove BOW
 BioWordVec BOW
-Note GloVe Positional Encoding ?
 '''
-import os
-
 import io
 import numpy as np
-import sent2vec
+import os
+from gensim.models import KeyedVectors
 from nltk.corpus import stopwords
 from scipy.spatial import distance
 from tqdm import tqdm
@@ -21,18 +19,12 @@ from scorer.scorer import SimpleScorer
 
 class WordEmbeddingSAVGScorer(SimpleScorer):
     def __init__(self, use_word_vec_method):
-        # ElMo BOW
-        # fastText BOW
-        # Glove BOW
-        # BioWordVec BOW
         self.available_use_word_vec_methods = ['fasttext', 'glove']
         self.use_word_vec_method = use_word_vec_method
-        self.vec_len = 200
         self.stop_words = set(stopwords.words('english'))
 
         self.word_embeddings_dict = None
         self.biowordvec_model = None
-        # Note add a method_signature
         super().__init__('word-ebm-%s' % use_word_vec_method)
 
     def _lazy_read_all_word_vec_dict(self):
@@ -41,7 +33,7 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
             with open(os.path.join(pretrained_model_path, 'glove.840B/glove.840B.300d.txt'), 'r') as f:
                 for line in tqdm(f):
                     values = line.split()
-                    if len(values) % 100 != 1: # 101, 201, 301, ...
+                    if len(values) % 100 != 1:  # 101, 201, 301, ...
                         continue
                     word = values[0]
                     try:
@@ -51,7 +43,8 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
                         continue
                     word_embeddings_dict[word] = vector
         elif self.use_word_vec_method == 'fasttext':
-            fin = io.open(os.path.join(pretrained_model_path, 'wiki-news-300d-1M.vec'), 'r', encoding='utf-8', newline='\n',
+            fin = io.open(os.path.join(pretrained_model_path, 'wiki-news-300d-1M.vec'), 'r', encoding='utf-8',
+                          newline='\n',
                           errors='ignore')
             n, d = map(int, fin.readline().split())
             for line in tqdm(fin):
@@ -59,15 +52,10 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
                 vector = np.asarray(tokens[1:], "float32")
                 word_embeddings_dict[tokens[0]] = vector
         elif self.use_word_vec_method == 'biowordvec':
-            # Note Load BioSentVec model
-            model_path = os.path.join(pretrained_model_path, 'BioSentVec/BioSentVec_PubMed_MIMICIII-bigram_d700.bin')
-            model = sent2vec.Sent2vecModel()
-            try:
-                model.load_model(model_path)
-            except Exception as e:
-                print(e)
-            print('model successfully loaded')
-            self.biowordvec_model = model
+            word_vector_model = KeyedVectors.load_word2vec_format(
+                os.path.join(pretrained_model_path, 'BioWordVec/bio_embedding_extrinsic'),
+                binary=True)
+            self.biowordvec_model = word_vector_model
 
         self.word_embeddings_dict = word_embeddings_dict
 
@@ -96,11 +84,22 @@ class WordEmbeddingSAVGScorer(SimpleScorer):
     def biosent_vec(self, q_content, c_contents):
         if self.biowordvec_model is None:
             self._lazy_read_all_word_vec_dict()
-        q_content_embedding = self.biowordvec_model.embed_sentence(q_content)
+
+        q_content_embedding = [self.biowordvec_model.word_vec(n) for n in q_content.split(' ') if
+                               n in self.biowordvec_model.vocab]
+
+        q_content_embedding = self.pooling_word_embedding_to_sentence_embedding(q_content_embedding)
         scores = []
         for c_content in c_contents:
-            c_content_embedding = self.biowordvec_model.embed_sentence(c_content)
-            score = 1 - distance.cosine(q_content_embedding, c_content_embedding)
+            c_content_embedding = [self.biowordvec_model.word_vec(n) for n in c_content.split(' ') if
+                                   n in self.biowordvec_model.vocab]
+            c_content_embedding = self.pooling_word_embedding_to_sentence_embedding(c_content_embedding)
+            try:
+                score = 1 - distance.cosine(q_content_embedding, c_content_embedding)
+            except Exception as e:
+                # Note In order to be a fair competitor, we assign random values to the rare cases
+                print('error!', e)
+                score = np.random.random()
             scores.append(score)
         return scores
 

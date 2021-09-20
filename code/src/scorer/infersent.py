@@ -13,7 +13,7 @@ class InferSentScorer(SimpleScorer):
         # Note add a method_signature
         self.model_version = model_version
         self.model = None
-        self.use_cuda = False
+        self.use_cuda = True
         super().__init__('infersent-v%d' % model_version)
 
     def _load_model(self):
@@ -28,14 +28,14 @@ class InferSentScorer(SimpleScorer):
         wordvec_path = glove840b300d_path if self.model_version == 1 else fasttextcrawl300d2m_path
         model.set_w2v_path(wordvec_path)
         # build w2v vocab with k most frequent words
-        model.build_vocab_k_words(K=1000000)
+        model.build_vocab_k_words(K=500000)
         self.model = model
 
     def score(self, q_content: str, c_contents: List[str], q_pm_id=None, c_pm_ids=None) -> List[float]:
         if self.model is None:
             self._load_model()
 
-        embeddings = self.model.encode([q_content] + c_contents, bsize=128, tokenize=False, verbose=True)
+        embeddings = self.model.encode([q_content] + c_contents, bsize=8, tokenize=False) # , verbose=True
         # print('nb sentences encoded : {0}'.format(len(embeddings)))
         q_content_emb = embeddings[0]
         c_content_embs = embeddings[1:]

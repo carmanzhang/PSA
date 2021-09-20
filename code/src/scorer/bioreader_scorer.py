@@ -1,28 +1,21 @@
-from typing import List, Union
-
 import string
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
 from scipy.stats import mannwhitneyu
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVR
-from tqdm import tqdm
+from typing import List, Union
 
-from config import AvailableDataset
-from metric.all_metric import eval_metrics
-from myio.data_reader import DBReader
+from helper.word_helper import Stemmer
 from scorer.scorer import NoQueryScorer
 
 stop_words = set(stopwords.words('english'))
 punctuation = set(string.punctuation)
-ps = PorterStemmer()
 
 
 def format_content(content: str) -> str:
     tokens = content.lower().split()
     tokens = [n for n in tokens if n not in stop_words and n not in punctuation and not n.isnumeric() and len(n) > 0]
-    #  stemDocument and stripWhitespace
-    res = ' '.join([ps.stem(n) for n in tokens])
+    res = ' '.join([Stemmer.stem(n) for n in tokens])
     return res
 
 

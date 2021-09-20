@@ -1,6 +1,3 @@
-import sys
-
-sys.path.append("..")
 import copy
 
 import os
@@ -106,18 +103,18 @@ no_query_sql_template = '''select id,
 from sp.eval_data_%s_with_content_without_query;'''
 
 if __name__ == '__main__':
-    # methods = ScorerMethodProvider().methods()
-    # for i, method in enumerate(methods):
-    #     for j, ds in enumerate(which_datasets):
-    #         ds_name = ds.value
-    #         sql = sql_template % ds_name
-    #         print(sql)
-    #         df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
-    #         df_copy = copy.deepcopy(df)
-    #         # if j > 0:
-    #         #     break
-    #         eval_query_based_method(method, ds_name, df_copy)
-    #     methods[i] = None
+    methods = ScorerMethodProvider().methods()
+    for i, method in enumerate(methods):
+        for j, ds in enumerate(which_datasets):
+            ds_name = ds.value
+            sql = sql_template % ds_name
+            print(sql)
+            df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
+            df_copy = copy.deepcopy(df)
+            # if j > 0:
+            #     break
+            eval_query_based_method(method, ds_name, df_copy)
+        methods[i] = None
 
     no_query_methods = ScorerMethodProvider().no_query_methods()
     for i, method in enumerate(no_query_methods):

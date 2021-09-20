@@ -6,14 +6,12 @@ import nltk
 import numpy as np
 import string
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
 from typing import List
 
 from scorer.scorer import NoQueryScorer
 
 stop_words = set(stopwords.words('english'))
 punctuation = set(string.punctuation)
-ps = PorterStemmer()
 
 
 def update(obj, vars, exclude=['self']):

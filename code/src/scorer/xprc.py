@@ -32,7 +32,7 @@ class XPRCScorer(SimpleScorer):
 class XPRC(PRC):
     '''This class re-rank the BM25 results using the MPRC algorithm.'''
 
-    def __init__(self, q_pm_id, c_pm_ids, c_contents, stem_word=False):
+    def __init__(self, q_pm_id, c_pm_ids, c_contents, stem_word=True):
         super(XPRC, self).__init__(q_pm_id, c_pm_ids, c_contents, stem_word=stem_word)
         self.knntermDir = 'knn'
         self.model = word2vec_model

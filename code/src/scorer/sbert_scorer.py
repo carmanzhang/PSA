@@ -21,7 +21,7 @@ class SBertScorer(SimpleScorer):
             model_name_or_path = os.path.join(saved_model_base_path, model_name_or_path)
         else:
             model_name = model_name_or_path.split('/')[1]
-            model_signature = 'sbert-%s' % model_name
+            model_signature = 'sbert-origin-%s' % model_name
 
         super().__init__(model_signature)
         self.model_path = model_name_or_path
@@ -76,7 +76,7 @@ class NoQuerySBertScorer(NoQueryScorer):
             model_name_or_path = os.path.join(saved_model_base_path, model_name_or_path)
         else:
             model_name = model_name_or_path.split('/')[1]
-            model_signature = 'sbert-%s-no-query' % model_name
+            model_signature = 'sbert-origin-%s-no-query' % model_name
 
         super().__init__(model_signature)
         self.model_path = model_name_or_path

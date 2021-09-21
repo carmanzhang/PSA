@@ -210,19 +210,23 @@ def get_ranking_metric_values(all_query_ranks, check_length=False, list_length=s
     return topns, num_queries, maps, mrrs, ndcgs, ranking_metrics_in_string
 
 
-def eval_metrics(all_query_ranks, method_name):
+def eval_metrics(all_query_ranks, method_name, saved_result=True):
     positions_scores = [[[1 if m[1] > 0 else 0 for m in n], [m[0] for m in n]] for n in all_query_ranks]
     classification_metrics, classification_metrics_in_string = report_classification_metrics(positions_scores)
+
     print(classification_metrics_in_string)
-    save_result(spec=method_name, metrics=classification_metrics_in_string)
+    if saved_result:
+        save_result(spec=method_name, metrics=classification_metrics_in_string)
 
     all_query_ranks = [[m[1] for m in n] for n in all_query_ranks]
     assert len(all_query_ranks) == len(positions_scores)
 
     topns, num_queries, maps, mrrs, ndcgs, ranking_metrics_in_string = get_ranking_metric_values(all_query_ranks)
-    # print(task_name, topns, num_queries, maps, mrrs, ndcgs)
+
     print(ranking_metrics_in_string)
-    save_result(spec=method_name, metrics=ranking_metrics_in_string)
+    if saved_result:
+        save_result(spec=method_name, metrics=ranking_metrics_in_string)
+
     return topns, num_queries, maps, mrrs, ndcgs, classification_metrics_in_string, ranking_metrics_in_string, \
            classification_metrics['gauc'], \
            classification_metrics['auc']

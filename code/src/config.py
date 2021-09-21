@@ -51,6 +51,7 @@ model_dir = os.path.join(proj_base_path, 'model')
 eval_data_dir = os.path.join(res_dir, 'evaluation-datasets')
 development_path = os.path.join(res_dir, 'pubmed_similar_paper_development_dataset.pkl')
 saved_model_base_path = os.path.join(res_dir, 'saved_best_models')
+saved_model_parameter_ablation_base_path = os.path.join(res_dir, 'saved_best_models_parameter_ablation')
 pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embedding.tsv')
 pmra_cached_data_dir = os.path.join(res_dir, 'pmra-cached-data')
 

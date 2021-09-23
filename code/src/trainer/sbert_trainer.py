@@ -4,7 +4,7 @@ sys.path.append("..")
 
 import os
 
-from config import ModelConfig, AvailableDataset, saved_model_base_path, Action, to_do_what, models_in_use, cached_dir
+from config import ModelConfig, AvailableDataset, saved_model_base_path, models_in_use, cached_dir
 from model.action_processing import ActionProcessor
 from myio.data_reader import DBReader
 
@@ -127,20 +127,12 @@ for ds in available_datasets:
                     idx + 1, model_name, model_name_or_path, save_model_dir))
 
             processor = ActionProcessor(model_name_or_path, [df_train, df_val, df_test])
-
-            if to_do_what == Action.EVALUATE:
-                print('max_seq_length: ', processor.model.max_seq_length)
-                print('evaluation metrics: ')
-                res = processor.evaluate()
-                print(res)
-
-            elif to_do_what == Action.FINE_TUNE_EVALUATE:
-                processor.model.max_seq_length = params.max_seq_length
-                print('updated max_seq_length: ', processor.model.max_seq_length)
-                res = processor.fine_tune(
-                    save_model_path=os.path.join(save_model_dir, 'tuned_' + running_config),
-                    model_config=params).evaluate()
-                print(res)
-                print()
+            processor.model.max_seq_length = params.max_seq_length
+            print('updated max_seq_length: ', processor.model.max_seq_length)
+            res = processor.fine_tune(
+                save_model_path=os.path.join(save_model_dir, 'tuned_' + running_config),
+                model_config=params).evaluate()
+            print(res)
+            print()
         except Exception as e:
             print(e)

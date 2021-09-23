@@ -180,8 +180,10 @@ def get_ranking_metric_values(all_query_ranks, check_length=False, list_length=s
     print('query distribution: ', Counter([len(n) for n in all_query_ranks]))
     topns, num_queries, maps, mrrs, ndcgs = [], [], [], [], []
     for i, top_n in enumerate(list(range(top_n_interval, set_list_length + 1, top_n_interval))):
-        # query result 的长度不一致，会对结果不公平，这里过滤掉这样的结果，截断过长的结果，只取topn个结果
+        # Note query result 的长度不一致，会对结果不公平，这里过滤掉这样的结果，截断过长的结果，只取topn个结果
         all_query_ranks_topn = [n[:top_n] for n in all_query_ranks if len(n) >= top_n]
+        # all_query_ranks_topn = [n[:top_n] for n in all_query_ranks]
+
         all_query_ranks_topn_without_weight = [[1 if m > 0 else 0 for m in n] for n in all_query_ranks_topn]
         num_query = len(all_query_ranks_topn)
         # print('evaluate %s queries after delete shorter query' % len(all_query_ranks))

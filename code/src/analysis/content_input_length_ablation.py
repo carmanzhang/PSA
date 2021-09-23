@@ -1,4 +1,5 @@
 import sys
+from scipy.spatial import distance
 
 sys.path.append("..")
 
@@ -12,7 +13,10 @@ from config import ModelConfig, AvailableDataset, saved_model_parameter_ablation
 from model.action_processing import ActionProcessor
 from myio.data_reader import DBReader
 
-model_name_or_path = 'allenai-specter'
+# model_name_or_path = 'allenai-specter'
+model_name_or_path = 'dmis-lab/biobert-v1.1'
+# model_name_or_path='allenai/scibert_scivocab_uncased'
+
 all_max_seq_lengths = [200, 250, 300, 350, 400, 450, 500]
 model_name = model_name_or_path[
              model_name_or_path.rindex('/') + 1:] if '/' in model_name_or_path else model_name_or_path
@@ -125,8 +129,10 @@ for max_seq_length in all_max_seq_lengths:
     print('load train/val/test data', df_train.shape, df_val.shape, df_test.shape)
 
     # >>>>> Note Step 2. choose an action in config.py and to do it <<<<<<
-
     try:
+        save_model_path = os.path.join(save_model_dir, 'tuned_' + running_config)
+        if os.path.exists(save_model_path):
+            continue
         print(
             'loaded the model: \"%s\", may locate in \"%s\", and fine-tuned model will saved at \"%s\" if applicable' % (
                 model_name, model_name_or_path, save_model_dir))
@@ -135,21 +141,24 @@ for max_seq_length in all_max_seq_lengths:
 
         processor.model.max_seq_length = params.max_seq_length
         print('updated max_seq_length: ', processor.model.max_seq_length)
-        res = processor.fine_tune(
-            save_model_path=os.path.join(save_model_dir, 'tuned_' + running_config),
-            model_config=params).evaluate()
+
+        res = processor.fine_tune(save_model_path=save_model_path, model_config=params).evaluate()
         print(res)
         print()
     except Exception as e:
         print(e)
 
 
-def eval_query_based_method(method, ds_name, df_test):
-    model_name = method.signature
-    running_desc = '_'.join([model_name, ds_name])
-    print(running_desc)
+def score(processor, q_content, c_contents):
+    content_list = [q_content] + c_contents
+    sent_ebs = [n[1] for n in processor.infer(content_list, batch_size=320)]
+    q_sent_eb = sent_ebs[0]
+    c_sent_ebs = sent_ebs[1:]
+    scores = [1 - distance.cosine(q_sent_eb, c_sent_eb) for c_sent_eb in c_sent_ebs]
+    return scores
 
-    # Note no training here
+
+def eval_query_based_method(processor, df_test):
     all_query_ranks = []
     items = df_test[['q_pm_id', 'q_content', 'c_tuples']].values
     for item in tqdm(items):
@@ -159,14 +168,14 @@ def eval_query_based_method(method, ds_name, df_test):
         c_contents = [c_content for rcm_id, c_content, label in c_tuples]
         orders = [label for rcm_id, c_content, label in c_tuples]
 
-        scores = method.score(q_content, c_contents, q_pm_id, rcm_ids)
+        scores = score(processor, q_content, c_contents)
         # scores = bm25_score(q_content, c_contents)
 
         assert len(scores) == len(orders)
         query_rank = sorted(zip(scores, orders), key=lambda x: x[0], reverse=True)
         all_query_ranks.append(query_rank)
 
-    eval_metrics(all_query_ranks, running_desc)
+    eval_metrics(all_query_ranks, '', saved_result=False)
     print('current dataset: ', ds.value, 'method: ', model_name)
 
 
@@ -179,12 +188,14 @@ sql_template = '''select  q_pm_id,
                                                            , c_tuples)                         as c_tuples
                                                 from sp.eval_data_%s_with_content where train1_val2_test0 in (0);'''
 
-methods = [os.path.join(save_model_dir, model_dir) for model_dir in os.listdir(save_model_dir)]
+models = [os.path.join(save_model_dir, model_dir) for model_dir in os.listdir(save_model_dir)]
 ds_name = ds.value
-for i, method in enumerate(methods):
+for i, model_path in enumerate(models):
     sql = sql_template % ds_name
     print(sql)
-    df = DBReader.tcp_model_cached_read('vdsvfn', sql=sql, cached=False)
+
+    df = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-test.pkl'), sql=sql, cached=True)
     df_copy = copy.deepcopy(df)
-    eval_query_based_method(method, ds_name, df_copy)
-methods[i] = None
+    processor = ActionProcessor(model_path, data=None)
+    print('max_seq_length: ', processor.model.max_seq_length)
+    eval_query_based_method(processor, df_copy)

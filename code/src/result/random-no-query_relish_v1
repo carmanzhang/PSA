@@ -1,45 +1,30 @@
-09-07-15:06	random-no-query_relish_v1
+09-22-20:00	random-no-query_relish_v1
 {
     "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
-    "value": "41.83	70.43	30.44	42.51	41.82	41.83	50.02	-100.0"
+    "value": "42.6	71.38	31.33	43.54	42.59	42.6	50.66	-100.0"
 }
 ----------------------------------------------------------------------------------------------------
-09-07-15:06	random-no-query_relish_v1
+09-22-20:00	random-no-query_relish_v1
 {
-    "map": "0.7925	0.7825	1.0	nan	nan	nan	nan	nan	nan	nan",
-    "mrr": "0.8169	0.8461	1.0	nan	nan	nan	nan	nan	nan	nan",
-    "ndcg": "0.8165	0.7981	0.9758	nan	nan	nan	nan	nan	nan	nan",
-    "num_query": "2220	227	2	0	0	0	0	0	0	0",
+    "map": "0.7916	0.7696	0.7646	0.7958	nan	nan	nan	nan	nan	nan",
+    "mrr": "0.8165	0.8185	0.8298	0.7955	nan	nan	nan	nan	nan	nan",
+    "ndcg": "0.818	0.783	0.774	0.7871	nan	nan	nan	nan	nan	nan",
+    "num_query": "3104	2481	645	33	0	0	0	0	0	0",
     "top_n": "5	10	15	20	25	30	35	40	45	50"
 }
 ----------------------------------------------------------------------------------------------------
-09-07-16:35	random-no-query_relish_v1
+09-23-02:28	random-no-query_relish_v1
 {
     "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
-    "value": "41.72	70.04	30.6	42.59	41.71	41.72	49.73	-100.0"
+    "value": "41.7	70.26	30.33	42.37	41.69	41.7	49.39	-100.0"
 }
 ----------------------------------------------------------------------------------------------------
-09-07-16:35	random-no-query_relish_v1
+09-23-02:28	random-no-query_relish_v1
 {
-    "map": "0.7836	0.7726	1.0	nan	nan	nan	nan	nan	nan	nan",
-    "mrr": "0.8045	0.8103	1.0	nan	nan	nan	nan	nan	nan	nan",
-    "ndcg": "0.81	0.7857	0.9528	nan	nan	nan	nan	nan	nan	nan",
-    "num_query": "2220	227	2	0	0	0	0	0	0	0",
-    "top_n": "5	10	15	20	25	30	35	40	45	50"
-}
-----------------------------------------------------------------------------------------------------
-09-08-17:35	random-no-query_relish_v1
-{
-    "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
-    "value": "41.5	70.06	30.04	42.05	41.5	41.5	49.75	-100.0"
-}
-----------------------------------------------------------------------------------------------------
-09-08-17:35	random-no-query_relish_v1
-{
-    "map": "0.791	0.7835	1.0	nan	nan	nan	nan	nan	nan	nan",
-    "mrr": "0.8109	0.8445	1.0	nan	nan	nan	nan	nan	nan	nan",
-    "ndcg": "0.8158	0.7917	0.9691	nan	nan	nan	nan	nan	nan	nan",
-    "num_query": "2220	227	2	0	0	0	0	0	0	0",
+    "map": "0.7814	0.7632	0.7572	0.8068	nan	nan	nan	nan	nan	nan",
+    "mrr": "0.8041	0.8094	0.817	0.8419	nan	nan	nan	nan	nan	nan",
+    "ndcg": "0.8073	0.7765	0.7671	0.7866	nan	nan	nan	nan	nan	nan",
+    "num_query": "3104	2481	645	33	0	0	0	0	0	0",
     "top_n": "5	10	15	20	25	30	35	40	45	50"
 }
 ----------------------------------------------------------------------------------------------------

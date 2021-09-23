@@ -6,50 +6,9 @@ import traceback
 
 import os
 
-from config import ModelConfig, AvailableDataset, saved_model_base_path, Action, to_do_what, models_in_use, cached_dir
+from config import ModelConfig, AvailableDataset, saved_model_base_path, models_in_use, cached_dir
 from model.action_processing import ActionProcessor
 from myio.data_reader import DBReader
-
-# data_sql_template = """
-# select id,
-#        c_pos_pm_id,
-#        c_pos_content,
-#        c_neg_pm_id,
-#        c_neg_content
-# from (
-#       select id,
-#              arrayMap(i->
-#                           [xxHash32(i, randomPrintableASCII(5)) %% num_pos + 1, xxHash32(i, randomPrintableASCII(5)) %% num_neg + 1],
-#                       range(num_sampled_instances))                 as pos_neg_idx,
-#              arrayJoin(arrayFilter(y->length(y[1].1) > 0 and length(y[2].1) > 0,
-#                                    arrayDistinct(
-#                                            arrayMap(idx->
-#                                                         [pos_arr[idx[1]],neg_arr[idx[2]]],
-#                                                     pos_neg_idx)))) as pos_neg_item,
-#              tupleElement(pos_neg_item[1], 1)                       as c_pos_pm_id,
-#              tupleElement(pos_neg_item[1], 2)                       as c_pos_content,
-#              tupleElement(pos_neg_item[2], 1)                       as c_neg_pm_id,
-#              tupleElement(pos_neg_item[2], 2)                       as c_neg_content
-#       from (with ['relish_v1', 'trec_genomic_2005', 'trec_cds_2014'] as available_datasets,
-#                 [1.8, 5, 3.5] as sampling_factors,
-#                 indexOf(available_datasets, '%s') as dataset_idx,
-#                 sampling_factors[dataset_idx] as dataset_sampling_factor
-#             select id,
-#                    -- [irrelevant -> partial -> relevant]
-#                    -- [clean_title, clean_abstract, arrayStringConcat(two_level_mesh_arr, '|'), journal_title, datetime_str]
-#                    arrayMap(x-> (tupleElement(x, 1), concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2])),
-#                             %s[3])                                                        pos_arr,
-#                    arrayMap(x-> (tupleElement(x, 1), concat(tupleElement(x, 2)[1], ' ', tupleElement(x, 2)[2])),
-#                             %s[1])                                                        neg_arr,
-#                    length(pos_arr)                                                             as num_pos,
-#                    length(neg_arr)                                                             as num_neg,
-#                    toUInt32((num_pos > num_neg ? num_pos : num_neg) * dataset_sampling_factor) as num_sampled_instances
-#             from sp.eval_data_%s_with_content_without_query
-#             where num_pos > 0
-#               and num_neg > 0)
-#          )
-# where length(c_pos_pm_id) > 0
-#   and length(c_neg_pm_id) > 0;"""
 
 data_sql_template = """
 select id,
@@ -135,8 +94,8 @@ for ds in available_datasets:
 
     df_train = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-train-no-query.pkl'),
                                               sql=train_data_sql, cached=True)
-    df_val = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-val-no-query.pkl'), sql=val_data_sql,
-                                            cached=True)
+    df_val = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-val-no-query.pkl'),
+                                            sql=val_data_sql, cached=True)
     df_test = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-test-no-query.pkl'),
                                              sql=test_data_sql, cached=True)
 
@@ -157,20 +116,12 @@ for ds in available_datasets:
                     idx + 1, model_name, model_name_or_path, save_model_dir))
 
             processor = ActionProcessor(model_name_or_path, [df_train, df_val, df_test])
-
-            if to_do_what == Action.EVALUATE:
-                print('max_seq_length: ', processor.model.max_seq_length)
-                print('evaluation metrics: ')
-                res = processor.evaluate()
-                print(res)
-
-            elif to_do_what == Action.FINE_TUNE_EVALUATE:
-                processor.model.max_seq_length = params.max_seq_length
-                print('updated max_seq_length: ', processor.model.max_seq_length)
-                res = processor.fine_tune(
-                    save_model_path=os.path.join(save_model_dir, 'tuned_' + running_config),
-                    model_config=params).evaluate()
-                print(res)
-                print()
+            processor.model.max_seq_length = params.max_seq_length
+            print('updated max_seq_length: ', processor.model.max_seq_length)
+            res = processor.fine_tune(
+                save_model_path=os.path.join(save_model_dir, 'tuned_' + running_config),
+                model_config=params).evaluate()
+            print(res)
+            print()
         except Exception as e:
             traceback.print_exc()

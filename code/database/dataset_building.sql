@@ -264,6 +264,10 @@ from (
 group by q_pm_id
 ;
 
+select train1_val2_test0, count() as cnt, groupUniqArray(splitByChar('_', q_id)[1]), length(groupUniqArray(splitByChar('_', q_id)[1]))
+-- from sp.eval_data_relish_v1_with_content
+from sp.eval_data_trec_genomic_2005_with_content
+group by train1_val2_test0;
 
 -- Note test the number of missing samples
 -- 196680	original_data_instances

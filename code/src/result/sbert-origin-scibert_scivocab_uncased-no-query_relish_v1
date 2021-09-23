@@ -1,0 +1,15 @@
+09-23-04:21	sbert-origin-scibert_scivocab_uncased-no-query_relish_v1
+{
+    "metric_name": "acc	p	r	f1	macro_f1	micro_f1	auc	gauc",
+    "value": "81.69	83.75	91.94	87.65	76.15	81.69	86.77	-100.0"
+}
+----------------------------------------------------------------------------------------------------
+09-23-04:21	sbert-origin-scibert_scivocab_uncased-no-query_relish_v1
+{
+    "map": "0.8932	0.869	0.8591	0.8868	nan	nan	nan	nan	nan	nan",
+    "mrr": "0.9153	0.9196	0.9219	0.9343	nan	nan	nan	nan	nan	nan",
+    "ndcg": "0.8957	0.8734	0.8645	0.896	nan	nan	nan	nan	nan	nan",
+    "num_query": "3104	2481	645	33	0	0	0	0	0	0",
+    "top_n": "5	10	15	20	25	30	35	40	45	50"
+}
+----------------------------------------------------------------------------------------------------

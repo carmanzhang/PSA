@@ -65,7 +65,52 @@ select count(distinct splitByChar('|', JD_ids)[1]),
        count(distinct splitByChar('|', ST_ids)[1])
 from and.pubmed_paper_level_profile_JD_ST;
 
+-- drop table sp.eval_data_relish_v1_related_JD_ST;
+create table if not exists sp.eval_data_relish_v1_related_JD_ST ENGINE = Log as
+with (select groupArray((id, name)) from sp.biomedical_paper_JD_ST) as JD_ST_list
+select pm_id,
+       arrayMap(x-> arrayFilter(y->y.1 = x, JD_ST_list)[1], splitByChar('|', JD_ids)) as JDs,
+       arrayMap(x-> arrayFilter(y->y.1 = x, JD_ST_list)[1], splitByChar('|', ST_ids)) as STs
+from and.pubmed_paper_level_profile_JD_ST
+         -- Note associate ReLiSH dataset
+         any
+         inner join (
+    select arrayJoin(arrayDistinct(
+            arrayFlatten(groupArray(arrayConcat(relevant, partial, irrelevant, [pm_id]))))) as pm_id
+    from sp.eval_data_relish_v1
+    ) using pm_id;
+
+
 -- Note analyze the journal descriptor distribution of the who PubMed and the dataset
+select id, name, global_cnt, ds_cnt
+from (
+         select id, name, global_cnt
+         from (
+                  select splitByChar('|', JD_ids)[1] as id, count() as global_cnt
+                  from and.pubmed_paper_level_profile_JD_ST
+                  group by id
+                  order by global_cnt desc) any
+                  inner join sp.biomedical_paper_JD_ST using id) any
+         left join (
+    select id, name, ds_cnt
+    from (
+             select arrayJoin(splitByChar('|', JD_ids)) as id, count() as ds_cnt
+             from and.pubmed_paper_level_profile_JD_ST
+                      -- Note associate ReLiSH dataset
+                      any
+                      inner join (
+                 select arrayJoin(arrayDistinct(
+                         arrayFlatten(groupArray(arrayConcat(relevant, partial, irrelevant, [pm_id]))))) as pm_id
+                 from sp.eval_data_relish_v1
+                 --                  select distinct (pm_id) as pm_id
+--                  from sp.eval_data_trec_genomic_2005
+                 ) using pm_id
+             group by id
+             order by ds_cnt desc) any
+             inner join sp.biomedical_paper_JD_ST using id) using id;
+;
+
+-- Note analyze  distribution of the who PubMed and the dataset
 select id, name, global_cnt, ds_cnt
 from (
          select id, name, global_cnt
@@ -82,10 +127,15 @@ from (
              from and.pubmed_paper_level_profile_JD_ST
                       -- Note associate ReLiSH dataset
                       any
-                      inner join (select arrayJoin(arrayDistinct(
-                     arrayFlatten(groupArray(arrayConcat(relevant, partial, irrelevant, [pm_id]))))) as pm_id
-                                  from sp.eval_data_relish_v1) using pm_id
+                      inner join (
+                 select arrayJoin(arrayDistinct(
+                         arrayFlatten(groupArray(arrayConcat(relevant, partial, irrelevant, [pm_id]))))) as pm_id
+                 from sp.eval_data_relish_v1
+                 --                  select distinct (pm_id) as pm_id
+--                  from sp.eval_data_trec_genomic_2005
+                 ) using pm_id
              group by id
              order by ds_cnt desc) any
              inner join sp.biomedical_paper_JD_ST using id) using id;
 ;
+

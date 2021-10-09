@@ -4,7 +4,7 @@ import json
 import os
 from tqdm import tqdm
 
-from config import which_datasets, cached_dir, ranking_result_dir
+from config import cached_dir, ranking_result_dir, AvailableDataset
 from metric.all_metric import eval_metrics
 from myio.data_reader import DBReader
 from scorer.available_scorer import ScorerMethodProvider
@@ -70,7 +70,7 @@ def eval_no_query_based_method(method, ds_name, df):
         test_contents = test_contents + val_contents
         test_orders = test_orders + val_orders
 
-        scores = method.score(train_id, train_contents, train_orders, test_id, test_contents)
+        scores = method.noquery_score(train_id, train_contents, train_orders, test_id, test_contents)
         # print(p_docs, n_docs, len(scores), scores)
         if scores is None or len(scores) == 0:
             continue
@@ -126,6 +126,7 @@ no_query_sql_template = '''select id,
 from sp.eval_data_%s_with_content_without_query;'''
 
 if __name__ == '__main__':
+    which_datasets = AvailableDataset.aslist()
     methods = ScorerMethodProvider().methods()
     for i, method in enumerate(methods):
         for j, ds in enumerate(which_datasets):

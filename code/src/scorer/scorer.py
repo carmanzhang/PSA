@@ -16,7 +16,7 @@ class NoQueryScorer(ABC):
         self.signature = signature
 
     @abstractmethod
-    def score(self,
+    def noquery_score(self,
               train_id: List[str],
               train_contents: List[str],
               train_orders: List[int],

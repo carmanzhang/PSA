@@ -1,3 +1,6 @@
+'''
+transform the original RELISH dataset into the unified dataframe interface
+'''
 import json
 import os
 import pandas as pd

@@ -23,7 +23,7 @@ class BioreaderScorer(NoQueryScorer):
     def __init__(self):
         super().__init__('bioreader-no-query')
 
-    def score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
+    def noquery_score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
               test_contents: List[str]) -> Union[List[float], None]:
         contents = train_contents + test_contents
         ids = train_id + test_id

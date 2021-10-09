@@ -34,10 +34,7 @@ class AvailableDataset(Enum):
     @classmethod
     def aslist(cls):
         # return [cls.RELISHV1, cls.TREC2005, cls.TREC2014]
-        return [cls.RELISHV1, cls.TREC2005]
-
-
-which_datasets = AvailableDataset.aslist()
+        return [cls.RELISHV1]
 
 # resource config
 latex_doc_base_dir = '/home/zhangli/mydisk-2t/repo/manuscripts/ongoning-works/similar-article-recommendation-evaluation/src/'
@@ -73,7 +70,7 @@ doc2vec_based_path = os.path.join(model_dir, 'doc2vec')
 
 class ModelConfig:
     loss = ['COSIN', 'TRIPLET', 'CONTRASTIVE'][1]
-    epoch = 2
+    epoch = 3
     batch_size = 16
     optimizer_params = {'lr': 1e-5}
     max_seq_length = 200

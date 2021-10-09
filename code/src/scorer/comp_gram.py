@@ -4,7 +4,7 @@ from scipy.spatial import distance
 from typing import List, Union
 
 from config import pretrained_model_path
-from scorer.sbert import svm_regressor
+from model.ml import MLModel
 from scorer.scorer import SimpleScorer, NoQueryScorer
 
 """
@@ -13,12 +13,12 @@ and Unsupervised Learning of Sentence Embeddings using Compositional n-Gram Feat
 """
 
 
-class CompNGramScorer(SimpleScorer):
-    def __init__(self, model_name):
+class CompNGramScorer(SimpleScorer, NoQueryScorer):
+    def __init__(self, model_name, with_query=''):
         # Note add a method_signature
         self.model_name = model_name
         self.model = None
-        super().__init__('sent2vec-%s' % model_name)
+        super().__init__(('sent2vec-%s' % model_name) + with_query)
 
     def _load_model(self):
         model = sent2vec.Sent2vecModel()
@@ -37,21 +37,8 @@ class CompNGramScorer(SimpleScorer):
             scores.append(score)
         return scores
 
-class NoCompNGramScorer(NoQueryScorer):
-    def __init__(self, model_name):
-        # Note add a method_signature
-        self.model_name = model_name
-        self.model = None
-        super().__init__('sent2vec-%s' % model_name)
-
-    def _load_model(self):
-        model = sent2vec.Sent2vecModel()
-        model_path = os.path.join(pretrained_model_path, self.model_name + '.bin')
-        model.load_model(model_path)
-        self.model = model
-
-    def score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
-              test_contents: List[str]) -> Union[List[float], None]:
+    def noquery_score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
+                      test_contents: List[str]) -> Union[List[float], None]:
         if self.model is None:
             self._load_model()
 
@@ -66,6 +53,5 @@ class NoCompNGramScorer(NoQueryScorer):
         if len(test_ebs) == 0:
             return None
         else:
-            scores, _ = svm_regressor(train_ebs, train_orders, test_ebs)
+            _, scores, _ = MLModel.svm_regressor(train_ebs, train_orders, test_ebs)
             return scores
-

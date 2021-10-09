@@ -61,12 +61,15 @@ class ActionProcessor:
         self.model = model
         return self
 
-    def fine_tune(self, save_model_path, model_config):
+    def fine_tune(self, save_model_path, model_config, df_data=None, show_progress_bar=False):
         optimizer_params, epoch, batch_size, warmup_steps, evaluation_steps \
             = model_config.optimizer_params, model_config.epoch, model_config.batch_size, model_config.warmup_steps, model_config.evaluation_steps
 
         model = self.model
-        df_train, df_val = self.df_train, self.df_val
+        if df_data is None:
+            df_train, df_val = self.df_train, self.df_val
+        else:
+            df_train, df_val, df_test = df_data
         print(df_train.columns.values)
         if model_config.loss == 'COSIN':
             # prepare train data for tuning
@@ -75,6 +78,9 @@ class ActionProcessor:
             # Define your train dataset, the dataloader and the train loss
             train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
             loss = losses.CosineSimilarityLoss(model)
+            evaluator = evaluation.EmbeddingSimilarityEvaluator(df_val['q_content'].values, df_val['c_content'].values,
+                                                                df_val['score'].values.astype('float'),
+                                                                main_similarity=SimilarityFunction.COSINE)
         elif model_config.loss == 'TRIPLET':
             train_examples = [InputExample(texts=[q_content, c_pos_content, c_neg_content]) for
                               i, (q_content, c_pos_content, c_neg_content) in df_train.iterrows()]
@@ -119,7 +125,7 @@ class ActionProcessor:
                   evaluation_steps=evaluation_steps,
                   save_best_model=True,
                   output_path=save_model_path,
-                  show_progress_bar=False)
+                  show_progress_bar=show_progress_bar)
 
         # reset the fine-tuned model to attribute
         self.model = model

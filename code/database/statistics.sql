@@ -1,24 +1,34 @@
--- calculate sequence length to decide mas_seq_len parameter
-select length(splitByChar(' ', clean_title)) + length(splitByChar(' ', clean_abstract)) as seq_len, count() as cnt
+-- Note calculate sequence length to decide max_seq_len parameter
+--  0.6549141086351199
+with (select count() from fp.paper_clean_content) as all_articles
+select count() / all_articles as with_title_and_abstract_precentage
 from fp.paper_clean_content
-where rand() % 100 < 2
-group by seq_len
-order by seq_len
+where length(clean_abstract) > 10
+  and length(clean_title) > 0
 ;
 
--- 191.42418903747068, the average length of abstract is 191,
-select avg(length(splitByChar(' ', clean_abstract))) as avg_abs_len
+-- Note the average length of title+abstract if abstract field is available
+-- 205.35461144561137
+select avg(length(splitByChar(' ', clean_title)) + length(splitByChar(' ', clean_abstract))) as avg_seq_len
 from fp.paper_clean_content
-where rand() % 100 < 2
-  and length(clean_abstract) > 10;
-
-select length(splitByChar(' ', clean_abstract)) as seq_len, count() as cnt
-from fp.paper_clean_content
-where rand() % 100 < 2
-  and length(clean_abstract) > 10
-group by seq_len
-order by seq_len
+where length(clean_abstract) > 10
+  and length(clean_title) > 0
 ;
+-- select clean_abstract
+-- from fp.paper_clean_content
+-- where length(clean_abstract) > 30
+-- order by length(clean_abstract) limit 5000;
+
+-- 205.35461144561137
+-- 0.34393748882095837
+with (select count() from fp.paper_clean_content) as all_articles
+select count() / all_articles as sql_len_over_200_percentage
+from fp.paper_clean_content
+where length(clean_abstract) > 10
+  and length(clean_title) > 0
+  and length(splitByChar(' ', clean_title)) + length(splitByChar(' ', clean_abstract)) > 200
+;
+
 -- Note this data is to infer the research area from PubMed
 select pm_id, content
 from (select toString(pm_id)                          as pm_id,
@@ -139,3 +149,6 @@ from (
              inner join sp.biomedical_paper_JD_ST using id) using id;
 ;
 
+-- 163289
+select count(arrayJoin(arrayPushBack(arrayConcat(relevant, partial, irrelevant), pm_id))) as num_involved_article
+from sp.eval_data_relish_v1;

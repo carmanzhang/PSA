@@ -18,6 +18,7 @@ interface. After all these stages finished, the evaluation metrics of different 
 scenarios $SC$ can obtain with the framework.
 
 ![evaluation-framework](evaluation-framework.png "evaluation framework")
+
 This framework considers two recommendation scenario: article-oriented (AO) and user-oriented (UO) scenarios (depicted in the
 framework diagram). The article-oriented scenario ranks the candidates articles according to the similarity between the candidate
 and the query article, In user-oriented scenario, the ranking orders of candidates are determined by its similarities to the two

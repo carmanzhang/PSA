@@ -62,20 +62,26 @@ linewidth = 2.5
 idx = 0
 plot.plot(names, global_cnt, linestyle=linestyles[idx],
           # marker=line_markers[idx], markersize=8, markevery=0.2,
-          color=colors[idx], label='Whole PubMed', linewidth=linewidth)
+          color=colors[idx], label='PubMed', linewidth=linewidth)
 idx = 1
-plot.plot(names, ds_cnt, linestyle=linestyles[idx],
+plot.plot(names, ds_cnt,
           # marker=line_markers[idx], markersize=8, markevery=0.2,
-          color=colors[idx], label='ReliSH Dataset', linewidth=linewidth)
+          color=colors[idx], label='RELISH dataset', linewidth=linewidth)
+
+# Note add figure border
+for border in ['top', 'bottom', 'left', 'right']:
+    plot.gca().spines[border].set_linewidth(1.5)  # change width
+    # plot.gca().spines[border].set_color('red')    # change color
 
 # Note add text to the outliers
 for o_name, o_value in outliers:
+    print('discipline distributions: ', o_name, o_value * 100)
     plot.text(o_name, o_value, o_name, fontsize=12)
 
 # plot.yscale('log')
 # plot.title('journal descriptor distribution', fontsize=18)
-plot.xlabel('journal descriptor', fontsize=12)
-plot.ylabel('proportion (%)', fontsize=12)
+plot.xlabel('Journal descriptor order', fontsize=12)
+plot.ylabel('Proportion (%)', fontsize=12)
 plot.legend(loc='best')
 
 # Note set invisible to x axis
@@ -83,6 +89,6 @@ plot.xticks([])
 
 plot.tight_layout()
 
-plot.savefig(os.path.join(latex_doc_base_dir, 'figures/jd-dist.png'), dpi=600)
+plot.savefig(os.path.join(latex_doc_base_dir, 'figures/jd-dist.pdf'), dpi=600)
 
 plot.show()

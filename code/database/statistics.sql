@@ -8,7 +8,7 @@ where length(clean_abstract) > 10
 ;
 
 -- Note the average length of title+abstract if abstract field is available
--- 205.35461144561137
+-- 205.35461144561137 138.17198897804437
 select avg(length(splitByChar(' ', clean_title)) + length(splitByChar(' ', clean_abstract))) as avg_seq_len
 from fp.paper_clean_content
 where length(clean_abstract) > 10
@@ -90,6 +90,13 @@ from and.pubmed_paper_level_profile_JD_ST
     from sp.eval_data_relish_v1
     ) using pm_id;
 
+-- Note JD distribution
+select arrayJoin(arrayMap(x->
+                              x.2, JDs)) as JD,
+       count()                           as cnt
+from sp.eval_data_relish_v1_related_JD_ST
+group by JD
+order by cnt desc;
 
 -- Note analyze the journal descriptor distribution of the who PubMed and the dataset
 select id, name, global_cnt, ds_cnt

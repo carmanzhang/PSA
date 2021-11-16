@@ -3,10 +3,10 @@ This script analysis the potential bias in the training data and the predictions
 We indent to investigate whether there is bias in training, which finally results in predictions bias.
 '''
 import json
-import matplotlib.pyplot as plot
 # Note loaded the dataset and its corresponding research area
 import numpy as np
 import os
+from matplotlib import pyplot as plt
 
 from config import latex_doc_base_dir
 from metric.all_metric import eval_metrics
@@ -44,14 +44,12 @@ def split_predictions_into_areas(based_prediction, map_idx_id=0):
 # Note loaded the prediction data, predicted by fine-tuning sentence-transformer model
 based_path = '/home/zhangli/mydisk-2t/repo/pubmed-paper-clustering/code/data/ranking_result'
 prediction_files = {
-    'Specter': ['sbert-origin-specter_relish_v1.json',
-                'sbert-allenai-specter-relish_v1_relish_v1.json'],
-
-    'BioBert': ['sbert-origin-biobert-v1.1_relish_v1.json',
+    'BioBERT': ['sbert-origin-biobert-v1.1_relish_v1.json',
                 'sbert-biobert-v1.1-relish_v1_relish_v1.json'],
-
-    'SciBert': ['sbert-origin-scibert_scivocab_uncased_relish_v1.json',
-                'sbert-scibert_scivocab_uncased-relish_v1_relish_v1.json']
+    'SPECTER': ['sbert-origin-specter_relish_v1.json',
+                'sbert-allenai-specter-relish_v1_relish_v1.json'],
+    # 'SciBert': ['sbert-origin-scibert_scivocab_uncased_relish_v1.json',
+    #             'sbert-scibert_scivocab_uncased-relish_v1_relish_v1.json']
 }
 
 colors = ['green', 'black', 'red', 'cyan', 'blue', 'magenta', 'purple', 'gray', 'fuchsia', 'orange', 'yellow']
@@ -60,17 +58,20 @@ line_markers = ['<', '>', '^', 'v']
 linewidth = 2.5
 
 # Note plot area size distribution
-plot.bar(range(len(areas)), area_sizes, linestyle=linestyles[1], color=colors[1], linewidth=linewidth)
-plot.xlabel('Journal Descriptor Ordinals', fontsize=12)
-plot.ylabel('Frequency', fontsize=12)
+plt.bar(range(len(areas)), area_sizes, linestyle=linestyles[1], color=colors[1], linewidth=linewidth)
+plt.xlabel('Journal descriptor order', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+# plt.xticks(np.arange(1, len(areas) + 1, 1))
+# Note add figure border
+for border in ['top', 'bottom', 'left', 'right']:
+    plt.gca().spines[border].set_linewidth(1.5)  # change width
+plt.savefig(os.path.join(latex_doc_base_dir, 'figures/dataset-relishv1-bias.pdf'), dpi=600)
+plt.show()
 
-plot.savefig(os.path.join(latex_doc_base_dir, 'figures/dataset-relishv1-bias.png'), dpi=600)
-plot.show()
-
-ordered_map_metrics = ['MAP@5', 'MAP@10', 'MAP@15', 'MAP@20']
+ordered_map_metrics = ['MAP@5', 'MAP@10', 'MAP@15']
 
 for map_idx_id, metric_name in enumerate(ordered_map_metrics):
-    plot.figure(31, figsize=(12, 8), dpi=600)
+    plt.figure(21, figsize=(12, 6), dpi=600)
 
     for method_idx, item in enumerate(prediction_files.items()):
         model_name, (based_prediction_file_path, tuned_prediction_file_path) = item
@@ -87,28 +88,28 @@ for map_idx_id, metric_name in enumerate(ordered_map_metrics):
         print()
         # print(tuned_area_perf)
 
-        plot.subplot(311 + method_idx)
-        plot.bar(range(len(areas)),
-                 list(tuned_area_perf[:, 2].astype(np.float) - based_area_perf[:, 2].astype(np.float)),
-                 linestyle=linestyles[1],
-                 # marker=line_markers[idx], markersize=8, markevery=0.2,
-                 color=colors[1], linewidth=linewidth)
+        plt.subplot(211 + method_idx)
+        plt.bar(range(len(areas)),
+                list(tuned_area_perf[:, 2].astype(np.float) - based_area_perf[:, 2].astype(np.float)),
+                linestyle=linestyles[1],
+                # marker=line_markers[idx], markersize=8, markevery=0.2,
+                color=colors[1], linewidth=linewidth)
         # idx = 2
-        # plot.plot(areas, list(tuned_area_perf[:, 2].astype(np.float)), linestyle=linestyles[idx],
+        # plt.plot(areas, list(tuned_area_perf[:, 2].astype(np.float)), linestyle=linestyles[idx],
         #           # marker=line_markers[idx], markersize=8, markevery=0.2,
         #           color=colors[idx], label='Fine-tuning', linewidth=linewidth)
 
-        # plot.yscale('log')
-        # plot.title('journal descriptor distribution', fontsize=18)
-        plot.xlabel('%s' % model_name, fontsize=12)
-        plot.ylabel('%s Difference' % metric_name, fontsize=12)
-        # plot.legend(loc='best')
+        # plt.yscale('log')
+        # plt.title('journal descriptor distribution', fontsize=18)
+        plt.xlabel('%s' % model_name, fontsize=12)
+        plt.ylabel('%s Difference' % metric_name, fontsize=12)
+        # plt.legend(loc='best')
 
         # Note set invisible to x axis
-        # plot.xticks([])
+        # plt.xticks([])
 
-    plot.tight_layout()
+    plt.tight_layout()
 
     metric_name = metric_name.lower().replace('@', '')
-    plot.savefig(os.path.join(latex_doc_base_dir, 'figures/prediction-%s-bias.png' % metric_name), dpi=600)
-    plot.show()
+    plt.savefig(os.path.join(latex_doc_base_dir, 'figures/prediction-%s-bias.pdf' % metric_name), dpi=600)
+    plt.show()

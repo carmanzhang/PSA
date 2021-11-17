@@ -14,8 +14,7 @@ interface, or simply by choosing from the provided list of models. This stage wi
 models in the training phase. In the third stage, the saved models are reloaded for inferring on the test datasets. In the last
 stage, the performance evaluation is conducted based on the predictions of the previous stage. some commonly used ranking metrics
 have been implemented in this framework such as MAG and NDCG, and of course, other metrics also can be integrated via the
-interface. After all these stages finished, the evaluation metrics of different models $MD$ on different datasets $DS$ in
-scenarios $SC$ can obtain with the framework.
+interface. After all these stages finished, the evaluation metrics of different models on different datasets in scenarios can obtain with the framework.
 
 ![evaluation-framework](evaluation-framework.png "evaluation framework")
 

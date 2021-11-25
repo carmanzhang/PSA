@@ -9,12 +9,10 @@ methods and web systems, and a variety of text representation models as well.
 
 The evaluation framework consists of four modules: dataset preparing, training, scoring and evaluating, which form a complete
 workflow of evaluation. In the first stage, datasets are required by the framework, they can be either the new ones curated by
-experimenters or selected from existing ones. In the training stage, new models can be similarly implemented using our programming
-interface, or simply by choosing from the provided list of models. This stage will train multiple models while saving the best
+experimenters or selected from existing ones. In the training stage, new models can be similarly implemented in the trainer folder, or simply by choosing from the provided list of models. This stage will train multiple models while saving the best
 models in the training phase. In the third stage, the saved models are reloaded for inferring on the test datasets. In the last
 stage, the performance evaluation is conducted based on the predictions of the previous stage. some commonly used ranking metrics
-have been implemented in this framework such as MAG and NDCG, and of course, other metrics also can be integrated via the
-interface. After all these stages finished, the evaluation metrics of different models on different datasets in scenarios can obtain with the framework.
+have been implemented in this framework such as MAG and NDCG. After all these stages finished, the evaluation metrics of different models on different datasets in scenarios can obtain with the framework.
 
 ![evaluation-framework](evaluation-framework.png "evaluation framework")
 
@@ -22,7 +20,7 @@ This framework considers two recommendation scenario: article-oriented (AO) and 
 framework diagram). The article-oriented scenario ranks the candidates articles according to the similarity between the candidate
 and the query article, In user-oriented scenario, the ranking orders of candidates are determined by its similarities to the two
 sets of articles (positives and negatives). To facilitate reuse, This framework abstracted several programming interfaces to
-enable each module to be implemented independently.
+enable the scoring process of each method is implemented independently.
 
 ### Benchmarked approaches and performance
 

@@ -1,4 +1,4 @@
-## Open benchmarks for biomedical similar article recommendation (PSA-benchmarks)
+## Open benchmark for biomedical similar article recommendation (PSA-benchmark)
 
 ### Introduction
 
@@ -45,7 +45,7 @@ between query article and irrelevant article. In UO scenario, the tuning process
 relevant and irrelevant article sets due to the lacking of explicit queries. In this regard, the contrastive loss was used to
 minimize the distance among the positives while maximizing that between the negatives.
 
-#### benchmarks
+#### benchmark
 
 The following table is the experimental results of article-oriented (AO) recommenders on the RELISH dataset
 

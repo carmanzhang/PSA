@@ -37,4 +37,3 @@ class PreTrainedModel:
 if __name__ == '__main__':
     PreTrainedModel(name_or_path='allenai-specter').load()
     PreTrainedModel(name_or_path='dmis-lab/biobert-v1.1').load()
-    PreTrainedModel(name_or_path='allenai/scibert_scivocab_uncased').load()

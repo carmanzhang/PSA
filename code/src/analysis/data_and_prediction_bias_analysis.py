@@ -48,8 +48,6 @@ prediction_files = {
                 'sbert-biobert-v1.1-relish_v1_relish_v1.json'],
     'SPECTER': ['sbert-origin-specter_relish_v1.json',
                 'sbert-allenai-specter-relish_v1_relish_v1.json'],
-    # 'SciBert': ['sbert-origin-scibert_scivocab_uncased_relish_v1.json',
-    #             'sbert-scibert_scivocab_uncased-relish_v1_relish_v1.json']
 }
 
 colors = ['green', 'black', 'red', 'cyan', 'blue', 'magenta', 'purple', 'gray', 'fuchsia', 'orange', 'yellow']

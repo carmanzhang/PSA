@@ -33,7 +33,6 @@ from (
                 select arrayJoin(arrayDistinct(
                 arrayFlatten(groupArray(arrayConcat(relevant, partial, irrelevant, [pm_id]))))) as pm_id
                             from sp.eval_data_relish_v1
-                -- select distinct (pm_id) as pm_id from sp.eval_data_trec_genomic_2005
                             ) using pm_id
        group by id
        order by ds_cnt desc) any

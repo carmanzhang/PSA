@@ -28,8 +28,3 @@ class DBReader:
                 log.info('cached raw dataset into local directory')
                 # df.to_csv(cached_file_path, index=False, header=True)
         return df
-
-    @classmethod
-    def insert_dataframe(cls, df, sql: str):
-        tcp_client.insert_dataframe(query=sql, dataframe=df)
-        log.info('loaded raw dataset from database')

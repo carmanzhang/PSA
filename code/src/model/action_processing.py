@@ -106,16 +106,6 @@ class ActionProcessor:
                                                                 df_val['score'].values.astype('float'),
                                                                 main_similarity=SimilarityFunction.COSINE)
 
-        # loss = losses.MultipleNegativesRankingLoss
-        # loss = losses.TripletLoss
-        #
-        # loss = losses.BatchHardSoftMarginTripletLoss
-        # loss = losses.BatchAllTripletLoss
-        # loss = losses.BatchHardTripletLoss
-        # loss = losses.ContrastiveLoss
-
-        # prepare evaluation data
-
         # Tune the model
         model.fit(train_objectives=[(train_dataloader, loss)],
                   epochs=epoch,

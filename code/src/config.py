@@ -4,12 +4,6 @@ from enum import Enum
 import os
 
 # Note device config
-# 0 _CudaDeviceProperties(name='GeForce RTX 3090', major=8, minor=6, total_memory=24268MB, multi_processor_count=82)
-# 1 _CudaDeviceProperties(name='GeForce RTX 3090', major=8, minor=6, total_memory=24268MB, multi_processor_count=82)
-# 2 _CudaDeviceProperties(name='Tesla V100-PCIE-16GB', major=7, minor=0, total_memory=16160MB, multi_processor_count=80)
-# 3 _CudaDeviceProperties(name='GeForce RTX 2080 Ti', major=7, minor=5, total_memory=11019MB, multi_processor_count=68)
-# 4 _CudaDeviceProperties(name='GeForce RTX 2080 Ti', major=7, minor=5, total_memory=11019MB, multi_processor_count=68)
-
 gpu_id = 0
 device = "cuda:%d" % gpu_id
 
@@ -28,20 +22,18 @@ class DBConfig:
 # action config
 class AvailableDataset(Enum):
     RELISHV1 = 'relish_v1'
-    TREC2005 = 'trec_genomic_2005'
-    TREC2014 = 'trec_cds_2014'
 
     @classmethod
     def aslist(cls):
-        # return [cls.RELISHV1, cls.TREC2005, cls.TREC2014]
         return [cls.RELISHV1]
+
 
 # resource config
 latex_doc_base_dir = '/home/zhangli/mydisk-2t/repo/manuscripts/ongoning-works/similar-article-recommendation-evaluation/src/'
 src_base_path = os.path.dirname(os.path.abspath(__file__))
 proj_base_path = os.path.abspath(os.path.join(src_base_path, os.pardir))
 # print(src_base_path)
-saved_result_path = os.path.join(src_base_path, 'result')
+saved_result_path = os.path.join(src_base_path, 'result-new')
 # print(proj_base_path)
 res_dir = os.path.join(proj_base_path, 'data')
 cached_dir = os.path.join(res_dir, 'cached')
@@ -54,7 +46,7 @@ pubmed_infer_embedding_file = os.path.join(res_dir, 'pubmed_all_paper_bert_embed
 pmra_cached_data_dir = os.path.join(res_dir, 'pmra-cached-data')
 ranking_result_dir = os.path.join(res_dir, 'ranking_result')
 
-# Note simple model config
+# Note model config
 
 pretrained_model_path = proj_base_path = os.path.abspath('/home/zhangli/pre-trained-models/')
 glove840b300d_path = os.path.join(pretrained_model_path, 'glove.840B/glove.840B.300d.txt')
@@ -100,36 +92,8 @@ class ModelConfig:
         return s
 
 
-# TODO available models
-ukplab_archived_model = [
-    # 'average_word_embeddings_glove.6B.300d',
-    # 'average_word_embeddings_komninos',
-    # 'average_word_embeddings_levy_dependency',
-    # 'average_word_embeddings_glove.840B.300d',
-    # TODO include bert-base in for comparison to increase the diversity of baselines
-    # TODO add sota unspervised learning model TSDAE
-    'stsb-bert-base',
-    'stsb-distilbert-base',
-    'stsb-roberta-large',
-    'stsb-distilroberta-base-v2',
-    'stsb-roberta-base',
-    'stsb-roberta-base-v2',  # batch8
-    'stsb-mpnet-base-v2',  # batch8
-
-    'allenai-specter'
-]
-
-supply_models = [
-    '/home/zhangli/pre-trained-models/scibert_scivocab_uncased',  # batch8
-    '/home/zhangli/pre-trained-models/biobert-v1.1'
-]
-
-pretrained_models = ukplab_archived_model + supply_models
-
 # TODO use which to evaluate
-# models_in_use = saved_tuned_models
-# models_in_use = pretrained_models
-models_in_use = ['allenai-specter'] + supply_models
+models_in_use = ['allenai-specter', '/home/zhangli/pre-trained-models/biobert-v1.1']
 
 # metrics config
 top_n_interval = 5

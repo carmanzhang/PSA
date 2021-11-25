@@ -1,5 +1,0 @@
-from sentence_transformers import SentenceTransformer, InputExample, losses
-from sentence_transformers import evaluation
-from sentence_transformers import losses
-
-losses.MultipleNegativesRankingLoss()

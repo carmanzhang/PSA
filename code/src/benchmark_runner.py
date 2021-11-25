@@ -146,6 +146,7 @@ if __name__ == '__main__':
             ds_name = ds.value
             sql = no_query_sql_template % ds_name
             print(sql)
+            # Note the average number instances of training/evaluation/test is: 47.9, 6.08,	5.94 in this evaluation scenario
             df = DBReader.tcp_model_cached_read(os.path.join(cached_dir, '%s-no-query.pkl' % ds_name),
                                                 sql=sql,
                                                 cached=True)

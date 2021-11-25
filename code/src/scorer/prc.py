@@ -7,7 +7,6 @@ import re
 import string
 from hashlib import sha1
 from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 from typing import List
 

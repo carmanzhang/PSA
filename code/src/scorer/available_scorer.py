@@ -20,63 +20,48 @@ from scorer.xprc import XPRCScorer
 class ScorerMethodProvider:
     def methods(self) -> List[SimpleScorer]:
         return [
-            # RandomScorer(),
-            # BM25Scorer(),
-            # WordEmbeddingSAVGScorer('biowordvec'),
-            # WordEmbeddingSAVGScorer('fasttext'),
-            # WordEmbeddingSAVGScorer('glove'),
-            # LDAScorer(num_topics=num_lda_topics, model_based_path=lda_based_path),
-            # Doc2vecScorer(model_based_path=doc2vec_based_path),
-            CompNGramScorer(model_name='WikiSentVec_wiki_unigrams'),
-            # CompNGramScorer(model_name='BioSentVec_PubMed_MIMICIII-bigram_d700'),
-            # InferSentScorer(model_version=1),
-            # InferSentScorer(model_version=2),
-            #
-            # PMRAScorer(),
-            # # XPRCScorer(), # TODO
+            RandomScorer(),
 
-            # SBertScorer(model_name_or_path='allenai/specter'),
-            # SBertScorer(model_name_or_path='dmis-lab/biobert-v1.1'),
-            # SBertScorer(model_name_or_path='allenai/scibert_scivocab_uncased'),
-            #
-            # SBertScorer(model_name_or_path='allenai-specter/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
-            # SBertScorer(model_name_or_path='allenai-specter/tuned_trec_genomic_2005-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
-            #
-            # SBertScorer(model_name_or_path='biobert-v1.1/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
-            # SBertScorer(model_name_or_path='biobert-v1.1/tuned_trec_genomic_2005-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
-            #
-            # SBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
-            # SBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_trec_genomic_2005-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
+            BM25Scorer(),
+            PMRAScorer(),
+            XPRCScorer(),
+
+            WordEmbeddingSAVGScorer('biowordvec'),
+            WordEmbeddingSAVGScorer('fasttext'),
+            WordEmbeddingSAVGScorer('glove'),
+            LDAScorer(num_topics=num_lda_topics, model_based_path=lda_based_path),
+            Doc2vecScorer(model_based_path=doc2vec_based_path),
+            CompNGramScorer(model_name='WikiSentVec_wiki_unigrams'),
+            CompNGramScorer(model_name='BioSentVec_PubMed_MIMICIII-bigram_d700'),
+            InferSentScorer(model_version=1),
+            InferSentScorer(model_version=2),
+
+            SBertScorer(model_name_or_path='allenai/specter'),
+            SBertScorer(model_name_or_path='dmis-lab/biobert-v1.1'),
+            SBertScorer(model_name_or_path='allenai-specter/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
+            SBertScorer(model_name_or_path='biobert-v1.1/tuned_relish_v1-lsTRIPLET-ep3-bs16-lr0.000010-vl10-sl200'),
         ]
 
     def no_query_methods(self) -> List[NoQueryScorer]:
         return [
-            # NoQueryRandomScorer(),
-            # MScannerScorer(),
-            # MedlineRankerScorer(),
-            # BioreaderScorer(),
+            NoQueryRandomScorer(),
 
-            # WordEmbeddingSAVGScorer('biowordvec', with_query='-no-query'),
-            # WordEmbeddingSAVGScorer('fasttext', with_query='-no-query'),
-            # WordEmbeddingSAVGScorer('glove', with_query='-no-query'),
-            # LDAScorer(num_topics=num_lda_topics, model_based_path=lda_based_path, with_query='-no-query'),
-            # Doc2vecScorer(model_based_path=doc2vec_based_path, with_query='-no-query'),
+            MScannerScorer(),
+            MedlineRankerScorer(),
+            BioreaderScorer(),
+
+            WordEmbeddingSAVGScorer('biowordvec', with_query='-no-query'),
+            WordEmbeddingSAVGScorer('fasttext', with_query='-no-query'),
+            WordEmbeddingSAVGScorer('glove', with_query='-no-query'),
+            LDAScorer(num_topics=num_lda_topics, model_based_path=lda_based_path, with_query='-no-query'),
+            Doc2vecScorer(model_based_path=doc2vec_based_path, with_query='-no-query'),
             CompNGramScorer(model_name='WikiSentVec_wiki_unigrams', with_query='-no-query'),
-            # CompNGramScorer(model_name='BioSentVec_PubMed_MIMICIII-bigram_d700', with_query='-no-query'),
+            CompNGramScorer(model_name='BioSentVec_PubMed_MIMICIII-bigram_d700', with_query='-no-query'),
             InferSentScorer(model_version=1, with_query='-no-query'),
             InferSentScorer(model_version=2, with_query='-no-query'),
 
-            # NoQuerySBertScorer(model_name_or_path='allenai/specter'),
-            # NoQuerySBertScorer(model_name_or_path='dmis-lab/biobert-v1.1'),
-            # NoQuerySBertScorer(model_name_or_path='allenai/scibert_scivocab_uncased'),
-            #
-            # NoQuerySBertScorer(model_name_or_path='allenai-specter/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
-            # NoQuerySBertScorer(model_name_or_path='allenai-specter/tuned_no-query-trec_genomic_2005-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
-            #
-            # NoQuerySBertScorer(model_name_or_path='biobert-v1.1/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
-            # NoQuerySBertScorer(model_name_or_path='biobert-v1.1/tuned_no-query-trec_genomic_2005-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
-            #
-            # NoQuerySBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
-            # NoQuerySBertScorer(model_name_or_path='scibert_scivocab_uncased/tuned_no-query-trec_genomic_2005-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
-
+            NoQuerySBertScorer(model_name_or_path='allenai/specter'),
+            NoQuerySBertScorer(model_name_or_path='dmis-lab/biobert-v1.1'),
+            NoQuerySBertScorer(model_name_or_path='allenai-specter/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
+            NoQuerySBertScorer(model_name_or_path='biobert-v1.1/tuned_no-query-relish_v1-lsCONTRASTIVE-ep3-bs16-lr0.000010-vl10-sl200'),
         ]

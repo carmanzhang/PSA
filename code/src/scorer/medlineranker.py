@@ -338,7 +338,7 @@ class MedlineRankerScorer(NoQueryScorer):
         super().__init__('medlineranker-no-query')
 
     def noquery_score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
-              test_contents: List[str]) -> List[float]:
+                      test_contents: List[str]) -> List[float]:
         contents = train_contents + test_contents
         ids = train_id + test_id
 

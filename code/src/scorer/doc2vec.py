@@ -1,12 +1,9 @@
-import numpy as np
 import os
-import pickle
 from gensim.models import Doc2Vec
 from scipy.spatial import distance
-from sentence2vec.word2vec import Sent2Vec
 from typing import List, Union
 
-from config import model_dir, doc2vec_based_path
+from config import doc2vec_based_path
 from model.ml import MLModel
 from scorer.scorer import SimpleScorer, NoQueryScorer
 

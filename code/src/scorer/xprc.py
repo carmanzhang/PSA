@@ -13,6 +13,7 @@ word2vec_model = models.KeyedVectors.load_word2vec_format(
 
 precomputed_topic_similar_words = {}
 
+
 class XPRCScorer(SimpleScorer):
     def __init__(self):
         super().__init__('xprc')

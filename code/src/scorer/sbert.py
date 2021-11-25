@@ -1,8 +1,4 @@
 from scipy.spatial import distance
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.linear_model import LogisticRegression
-# from thundersvm import SVR as gpuSVR
-from sklearn.svm import SVR
 from typing import List, Union
 
 from config import *
@@ -60,7 +56,7 @@ class NoQuerySBertScorer(NoQueryScorer):
         self.processor = None
 
     def noquery_score(self, train_id: List[str], train_contents: List[str], train_orders: List[int], test_id: List[str],
-              test_contents: List[str]) -> Union[List[float], None]:
+                      test_contents: List[str]) -> Union[List[float], None]:
         if self.processor is None:
             self.processor = ActionProcessor(self.model_path, data=None)
             self.processor.model.max_seq_length = ModelConfig.max_seq_length

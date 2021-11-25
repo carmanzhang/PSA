@@ -49,7 +49,7 @@ from (with 5 as dataset_balance_ratio
              tupleElement(pos_pos_or_neg_neg_pair_item.2, 1)                             as pm_id2,
              tupleElement(pos_pos_or_neg_neg_pair_item.2, 2)                             as content2,
              pos_pos_or_neg_neg_pair_item.3                                              as score
-      from (with ['relish_v1', 'trec_genomic_2005', 'trec_cds_2014'] as available_datasets,
+      from (with ['relish_v1'] as available_datasets,
                 [1.5, 12, 10] as sampling_factors,
                 indexOf(available_datasets, '%s') as dataset_idx,
                 sampling_factors[dataset_idx] as dataset_sampling_factor

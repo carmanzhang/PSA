@@ -38,7 +38,7 @@ from (
              tupleElement(pos_neg_item[1], 2)                       as c_pos_content,
              tupleElement(pos_neg_item[2], 1)                       as c_neg_pm_id,
              tupleElement(pos_neg_item[2], 2)                       as c_neg_content
-      from (with ['relish_v1', 'trec_genomic_2005', 'trec_cds_2014'] as available_datasets,
+      from (with ['relish_v1'] as available_datasets,
                 [7, 0.07, 0.07] as sampling_factors,
                 indexOf(available_datasets, '%s') as dataset_idx,
                 sampling_factors[dataset_idx] as dataset_sampling_factor

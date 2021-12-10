@@ -32,9 +32,7 @@ class AvailableDataset(Enum):
 latex_doc_base_dir = '/home/zhangli/mydisk-2t/repo/manuscripts/ongoning-works/similar-article-recommendation-evaluation/src/'
 src_base_path = os.path.dirname(os.path.abspath(__file__))
 proj_base_path = os.path.abspath(os.path.join(src_base_path, os.pardir))
-# print(src_base_path)
 saved_result_path = os.path.join(src_base_path, 'result-new')
-# print(proj_base_path)
 res_dir = os.path.join(proj_base_path, 'data')
 cached_dir = os.path.join(res_dir, 'cached')
 model_dir = os.path.join(proj_base_path, 'model')

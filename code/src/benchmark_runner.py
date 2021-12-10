@@ -27,7 +27,6 @@ def eval_query_based_method(method, ds_name, df_test):
         orders = [label for rcm_id, c_content, label in c_tuples]
 
         scores = method.score(q_content, c_contents, q_pm_id, rcm_ids)
-        # scores = bm25_score(q_content, c_contents)
 
         assert len(scores) == len(orders)
         query_rank = sorted(zip(scores, orders), key=lambda x: x[0], reverse=True)
@@ -65,7 +64,6 @@ def eval_no_query_based_method(method, ds_name, df):
         val_orders = [n[2] for n in val_data]
         test_orders = [n[2] for n in test_data]
 
-        # Note that we combine val and test folds as the final test data, because the validation set will not being used
         test_id = test_id + val_id
         test_contents = test_contents + val_contents
         test_orders = test_orders + val_orders
@@ -135,8 +133,6 @@ if __name__ == '__main__':
             print(sql)
             df = DBReader.tcp_model_cached_read(os.path.join(cached_dir, ds_name + '-test.pkl'), sql=sql, cached=True)
             df_copy = copy.deepcopy(df)
-            # if j > 0:
-            #     break
             eval_query_based_method(method, ds_name, df_copy)
         methods[i] = None
 
@@ -151,8 +147,6 @@ if __name__ == '__main__':
                                                 sql=sql,
                                                 cached=True)
             df_copy = copy.deepcopy(df)
-            # if j > 0:
-            #     break
             eval_no_query_based_method(method, ds_name, df_copy)
         no_query_methods[i] = None
 print("*" * 100)

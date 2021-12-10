@@ -1,5 +1,6 @@
 import os
 import sys
+from adjustText import adjust_text
 
 from config import latex_doc_base_dir
 
@@ -52,12 +53,13 @@ ds_cnt = values[:, 1] / np.sum(values[:, 1])
 names = values[:, 3]
 
 # Note outliers
-outliers = [[names[i], ds_cnt[i]] for i in range(len(global_cnt)) if abs(global_cnt[i] - ds_cnt[i]) > 0.015]
+outliers = [[names[i], ds_cnt[i]] for i in range(len(global_cnt)) if abs(global_cnt[i] - ds_cnt[i]) > 0.018]
 
-colors = ['green', 'red', 'gold', 'black', 'cyan', 'blue', 'magenta', 'purple', 'gray', 'fuchsia', 'orange', 'yellow']
+# colors = ['green', 'blue', 'red', 'gold', 'black', 'cyan', 'magenta', 'purple', 'fuchsia', 'orange', 'yellow']
+colors = ['black', 'grey', 'red', 'gold', 'black', 'cyan', 'magenta', 'purple', 'fuchsia', 'orange', 'yellow']
 linestyles = [':', '-.', '--', '--']
 line_markers = ['<', '>', '^', 'v']
-linewidth = 2.5
+linewidth = 1.5
 idx = 0
 plot.plot(names, global_cnt, linestyle=linestyles[idx],
           # marker=line_markers[idx], markersize=8, markevery=0.2,
@@ -73,9 +75,20 @@ for border in ['top', 'bottom', 'left', 'right']:
     # plot.gca().spines[border].set_color('red')    # change color
 
 # Note add text to the outliers
+
+texts = []
 for o_name, o_value in outliers:
     print('discipline distributions: ', o_name, o_value * 100)
-    plot.text(o_name, o_value, o_name, fontsize=12)
+    ax = plot.text(o_name, o_value, o_name, fontsize=10, color='black')
+    texts.append(ax)
+adjust_text(texts,
+            # force_text=(0.5, 0),
+            # force_objects=(1, 0),
+            # expand_text=(1.05, 2.5),
+            arrowprops=dict(arrowstyle="->", color='black', lw=0.5),
+            autoalign=False,
+            only_move={'points': 'xy', 'text': 'xy', 'objects': 'x'}
+            )
 
 # plot.yscale('log')
 # plot.title('journal descriptor distribution', fontsize=18)
@@ -85,6 +98,10 @@ plot.legend(loc='best')
 
 # Note set invisible to x axis
 plot.xticks([])
+
+# plot.set_ylim(ymin=-0.001)
+# plot.margins(x=0.1, y=0.1)
+# plot.subplots_adjust(left=0.1, bottom=0.1, right=1, top=1, wspace=0, hspace=0)
 
 plot.tight_layout()
 

@@ -1,5 +1,3 @@
-## Open benchmark for biomedical similar article recommendation (PSA-benchmark)
-
 ### Introduction
 
 Information overload of the considerable, ever-increasing scientific publications is a critical issue confronted by the whole research community. Searching for the highly similar/relevant articles from vast article datasets (e.g., PubMed) using traditional information retrieval systems is not easy, because the short query (usually several keywords) is not informative to reflect user's information need. In this context, similar article recommendation task can be very useful, it can mitigate the information overload issue by recommending those highly similar/relevant articles to users according to the informative queries, article. In other words, recommending more articles by the query articles that users are of interested is the aim of the similar article recommendation task. This project provides an evaluation framework for this task, and benchmarked nearly 20 approaches covering most exiting
